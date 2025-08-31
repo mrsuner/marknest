@@ -5,6 +5,7 @@ import { Crepe } from '@milkdown/crepe';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
+import './editor-theme.css';
 
 interface DocumentEditorProps {
   documentId: string;
@@ -29,6 +30,10 @@ const CrepeEditor: React.FC<CrepeEditorProps> = ({ isFullscreen }) => {
         '--milkdown-color-primary': 'oklch(var(--p))',
         '--milkdown-color-surface': 'oklch(var(--b1))',
         '--milkdown-color-on-surface': 'oklch(var(--bc))',
+        '--crepe-color-background': 'oklch(var(--b1))',
+        '--crepe-color-on-background': 'oklch(var(--bc))',
+        '--crepe-color-surface': 'oklch(var(--b1))',
+        '--crepe-color-on-surface': 'oklch(var(--bc))',
       } as React.CSSProperties}
     >
       <Milkdown />

@@ -1,0 +1,78 @@
+/* Custom Milkdown/Crepe theme to match DaisyUI dashboard */
+
+.milkdown {
+  /* Match dashboard background */
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* Crepe editor container */
+.crepe .milkdown {
+  --crepe-color-background: oklch(var(--b1));
+  --crepe-color-on-background: oklch(var(--bc));
+  --crepe-color-surface: oklch(var(--b1));
+  --crepe-color-on-surface: oklch(var(--bc));
+  --crepe-color-primary: oklch(var(--p));
+  --crepe-color-secondary: oklch(var(--s));
+  --crepe-color-accent: oklch(var(--a));
+  
+  /* Ensure consistent background */
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* Editor content area */
+.crepe .milkdown .editor {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* Ensure text content matches theme */
+.crepe .milkdown .ProseMirror {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+  padding: 1rem;
+}
+
+/* Match border colors */
+.crepe .milkdown .editor,
+.crepe .milkdown .ProseMirror {
+  border-color: oklch(var(--b3));
+}
+
+/* Style headings to match dashboard */
+.crepe .milkdown h1,
+.crepe .milkdown h2,
+.crepe .milkdown h3,
+.crepe .milkdown h4,
+.crepe .milkdown h5,
+.crepe .milkdown h6 {
+  color: oklch(var(--bc));
+}
+
+/* Style links */
+.crepe .milkdown a {
+  color: oklch(var(--p));
+}
+
+.crepe .milkdown a:hover {
+  color: oklch(var(--pf));
+}
+
+/* Code blocks */
+.crepe .milkdown code {
+  background-color: oklch(var(--b2));
+  color: oklch(var(--bc));
+  border: 1px solid oklch(var(--b3));
+}
+
+.crepe .milkdown pre {
+  background-color: oklch(var(--b2));
+  border: 1px solid oklch(var(--b3));
+}
+
+/* Blockquotes */
+.crepe .milkdown blockquote {
+  border-left-color: oklch(var(--p));
+  background-color: oklch(var(--b2));
+}
