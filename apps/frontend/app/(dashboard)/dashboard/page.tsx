@@ -1,111 +1,13 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
 export default function DashboardPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (!token || !storedUser) {
-      router.push('/login');
-      return;
-    }
-
-    try {
-      setUser(JSON.parse(storedUser));
-    } catch (error) {
-      console.error('Failed to parse user data');
-      router.push('/login');
-    }
-    
-    setIsLoading(false);
-  }, [router]);
-
-  const handleLogout = async () => {
-    const token = localStorage.getItem('auth_token');
-    
-    try {
-      await fetch('http://localhost:8000/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-    
-    // Clear local storage
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('pending_email');
-    
-    // Redirect to login
-    router.push('/login');
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-base-100 via-base-200 to-base-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-100 via-base-200 to-base-100">
-      {/* Header */}
-      <header className="bg-base-100/80 backdrop-blur-sm border-b border-base-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
-                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </div>
-              <h1 className="text-xl font-semibold text-base-content">Marknest</h1>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-base-content">{user?.name}</p>
-                <p className="text-xs text-base-content/60">{user?.email}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-error/10 hover:bg-error/20 text-error rounded-lg font-medium transition-colors duration-200"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Welcome Card */}
         <div className="bg-gradient-to-br from-base-100 to-base-200 rounded-3xl shadow-lg border border-base-300/50 p-8 mb-8">
           <h2 className="text-3xl font-light text-base-content mb-2">
-            Welcome back, {user?.name}!
+            Welcome back!
           </h2>
           <p className="text-base-content/60 text-lg">
-            You're successfully logged in using passwordless authentication.
+            You&apos;re successfully logged in using passwordless authentication.
           </p>
         </div>
 
@@ -177,7 +79,6 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
   );
 }
