@@ -1,85 +1,62 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Crepe } from '@milkdown/crepe';
-import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
-import '@milkdown/crepe/theme/common/style.css';
-import '@milkdown/crepe/theme/frame.css';
-import './editor-theme.css';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import UncontrolledCrepeEditor, { CrepeEditorHandle } from './UncontrolledCrepeEditor';
 import { useGetDocumentQuery, useUpdateDocumentMutation } from '@/lib/store/api/documentsApi';
-import type { Document } from '@/lib/store/api/api';
 
 interface DocumentEditorProps {
   documentId: string;
 }
 
-interface CrepeEditorProps {
-  isFullscreen: boolean;
-  content: string;
-  onContentChange: (content: string) => void;
-}
+// Debounce helper
+function useDebounce<T extends (...args: any[]) => void>(
+  callback: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>();
+  const callbackRef = useRef(callback);
 
-// Using Document type from API instead
-
-const CrepeEditor: React.FC<CrepeEditorProps> = ({ isFullscreen, content, onContentChange }) => {
-  const [editorInstance, setEditorInstance] = useState<any>(null);
-
-  useEditor((root) => {
-    const crepe = new Crepe({
-      root,
-      defaultValue: content || '# Welcome to Marknest\n\nStart writing your markdown content here...'
-    });
-    
-    setEditorInstance(crepe);
-    return crepe;
-  }, [content]);
-
-  // Set up an interval to periodically check for content changes
+  // Update callback ref when it changes
   useEffect(() => {
-    if (!editorInstance) return;
-    
-    let lastContent = content;
-    const intervalId = setInterval(() => {
-      try {
-        const currentContent = editorInstance.getMarkdown?.() || '';
-        if (currentContent !== lastContent) {
-          lastContent = currentContent;
-          onContentChange(currentContent);
-        }
-      } catch (error) {
-        // Ignore errors when trying to get content
-        console.warn('Could not get editor content:', error);
+    callbackRef.current = callback;
+  }, [callback]);
+
+  const debouncedCallback = useCallback(
+    (...args: Parameters<T>) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
-    }, 1000); // Check every second
 
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [editorInstance, onContentChange]);
-
-  return (
-    <div
-      className={isFullscreen ? "h-screen w-full" : "min-h-[70vh] w-full"}
-      style={{
-        '--milkdown-color-primary': 'oklch(var(--p))',
-        '--milkdown-color-surface': 'oklch(var(--b1))',
-        '--milkdown-color-on-surface': 'oklch(var(--bc))',
-        '--crepe-color-background': 'oklch(var(--b1))',
-        '--crepe-color-on-background': 'oklch(var(--bc))',
-        '--crepe-color-surface': 'oklch(var(--b1))',
-        '--crepe-color-on-surface': 'oklch(var(--bc))',
-      } as React.CSSProperties}
-    >
-      <Milkdown />
-    </div>
+      timeoutRef.current = setTimeout(() => {
+        callbackRef.current(...args);
+      }, delay);
+    },
+    [delay]
   );
-};
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return debouncedCallback;
+}
 
 export default function DocumentEditor({ documentId }: DocumentEditorProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [currentDocumentId, setCurrentDocumentId] = useState(documentId);
+  
+  // Editor ref for imperative control
+  const editorRef = useRef<CrepeEditorHandle>(null);
+  
+  // Track if we're loading a new document to prevent save during load
+  const isLoadingNewDocumentRef = useRef(false);
   
   // Use RTK Query hooks
   const { data: documentResponse, isLoading, error: queryError, refetch } = useGetDocumentQuery(documentId);
@@ -88,12 +65,9 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
   const document = documentResponse?.data;
   const error = queryError || updateError;
 
-  const handleLoad = useCallback(() => {
-    refetch();
-  }, [refetch]);
-
-  const handleSave = useCallback(async (isAutoSave = false) => {
-    if (!document || isSaving) return;
+  // Auto-save functionality with debouncing
+  const handleAutoSave = useCallback(async (content: string) => {
+    if (!document || isSaving || isLoadingNewDocumentRef.current) return;
     
     try {
       await updateDocument({
@@ -101,36 +75,90 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
         data: {
           title,
           content,
-          is_auto_save: isAutoSave,
-          change_summary: isAutoSave ? 'Auto-save' : 'Manual save'
+          is_auto_save: true,
+          change_summary: 'Auto-save'
         }
       }).unwrap();
       
       setLastSaved(new Date());
+    } catch (err) {
+      console.error('Auto-save error:', err);
+    }
+  }, [documentId, document, title, isSaving, updateDocument]);
+
+  // Debounced auto-save (3 seconds after user stops typing)
+  const debouncedAutoSave = useDebounce(handleAutoSave, 3000);
+
+  // Handle content changes from editor
+  const handleContentChange = useCallback((newContent: string) => {
+    // Don't auto-save if we're loading a new document
+    if (!isLoadingNewDocumentRef.current) {
+      debouncedAutoSave(newContent);
+    }
+  }, [debouncedAutoSave]);
+
+  // Manual save
+  const handleSave = useCallback(async () => {
+    if (!document || isSaving || !editorRef.current) return;
+    
+    const content = editorRef.current.getContent();
+    
+    try {
+      await updateDocument({
+        id: documentId,
+        data: {
+          title,
+          content,
+          is_auto_save: false,
+          change_summary: 'Manual save'
+        }
+      }).unwrap();
       
-      if (!isAutoSave) {
-        console.log('Document saved successfully');
-      }
+      setLastSaved(new Date());
+      console.log('Document saved successfully');
     } catch (err) {
       console.error('Error saving document:', err);
     }
-  }, [documentId, document, title, content, isSaving, updateDocument]);
+  }, [documentId, document, title, isSaving, updateDocument]);
 
-  // Update local state when document is loaded from API
+  // Load document content when it changes or on reload
+  const handleLoad = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  // Update editor content when document is loaded from API
   useEffect(() => {
-    if (document) {
-      setContent(document.content || '');
+    if (document && editorRef.current) {
+      isLoadingNewDocumentRef.current = true;
+      
+      // Update local state
       setTitle(document.title || '');
+      
+      // Update editor content
+      editorRef.current.setContent(document.content || '');
+      
+      // Allow auto-save after a delay
+      setTimeout(() => {
+        isLoadingNewDocumentRef.current = false;
+      }, 500);
     }
   }, [document]);
 
+  // Handle document ID change (switching documents)
+  useEffect(() => {
+    if (documentId !== currentDocumentId) {
+      isLoadingNewDocumentRef.current = true;
+      setCurrentDocumentId(documentId);
+    }
+  }, [documentId, currentDocumentId]);
+
   const handleTitleChange = useCallback((newTitle: string) => {
     setTitle(newTitle);
-  }, []);
-
-  const handleContentChange = useCallback((newContent: string) => {
-    setContent(newContent);
-  }, []);
+    // Trigger auto-save when title changes
+    if (editorRef.current) {
+      debouncedAutoSave(editorRef.current.getContent());
+    }
+  }, [debouncedAutoSave]);
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
@@ -148,7 +176,7 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
       }
       if ((event.ctrlKey || event.metaKey) && event.key === 's') {
         event.preventDefault();
-        handleSave(false); // manual save
+        handleSave();
       }
     };
 
@@ -219,7 +247,7 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
             />
             <div className="flex gap-2">
               <button
-                onClick={() => handleSave(false)}
+                onClick={handleSave}
                 className={`btn btn-primary btn-sm ${isSaving ? 'loading' : ''}`}
                 disabled={isSaving}
               >
@@ -255,13 +283,13 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
         
         {/* Fullscreen Editor */}
         <div className="h-[calc(100vh-73px)]">
-          <MilkdownProvider>
-            <CrepeEditor 
-              isFullscreen={true} 
-              content={content}
-              onContentChange={handleContentChange}
-            />
-          </MilkdownProvider>
+          <UncontrolledCrepeEditor
+            ref={editorRef}
+            isFullscreen={true}
+            initialContent={document.content || ''}
+            onContentChange={handleContentChange}
+            changeIntervalMs={1000}
+          />
         </div>
       </div>
     );
@@ -281,7 +309,7 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
           />
           <div className="flex gap-2">
             <button
-              onClick={() => handleSave(false)}
+              onClick={handleSave}
               className={`btn btn-primary btn-sm ${isSaving ? 'loading' : ''}`}
               disabled={isSaving}
             >
@@ -325,13 +353,13 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
 
       {/* Normal Editor Container */}
       <div className="border border-base-300 rounded-b-lg overflow-hidden">
-        <MilkdownProvider>
-          <CrepeEditor 
-            isFullscreen={false} 
-            content={content}
-            onContentChange={handleContentChange}
-          />
-        </MilkdownProvider>
+        <UncontrolledCrepeEditor
+          ref={editorRef}
+          isFullscreen={false}
+          initialContent={document.content || ''}
+          onContentChange={handleContentChange}
+          changeIntervalMs={1000}
+        />
       </div>
     </div>
   );
