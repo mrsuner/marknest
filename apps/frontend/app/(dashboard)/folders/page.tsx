@@ -347,28 +347,30 @@ export default function FoldersPage() {
         </div>
       )}
 
-      {/* Toolbar */}
-      {selectedItems.length > 0 && (
-        <div className="flex items-center gap-4 p-4 bg-base-200/50 rounded-xl mb-4">
-          <span className="text-sm font-medium">
-            {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected
-          </span>
-          <div className="flex gap-2">
-            <button className="btn btn-sm btn-ghost">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326" />
-              </svg>
-              Share
-            </button>
-            <button onClick={handleDeleteSelected} className="btn btn-sm btn-ghost text-error">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Delete
-            </button>
+      {/* Toolbar - Always reserves space to prevent layout shift */}
+      <div className="mb-4 h-16">
+        <div className={`transition-all duration-200 ${selectedItems.length > 0 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
+          <div className="flex items-center gap-4 p-4 bg-base-200/50 rounded-xl">
+            <span className="text-sm font-medium">
+              {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected
+            </span>
+            <div className="flex gap-2">
+              <button className="btn btn-sm btn-ghost">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326" />
+                </svg>
+                Share
+              </button>
+              <button onClick={handleDeleteSelected} className="btn btn-sm btn-ghost text-error">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Items */}
       {isLoading ? (
