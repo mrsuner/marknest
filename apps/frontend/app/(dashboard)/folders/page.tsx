@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface FolderItem {
   id: string;
@@ -19,59 +20,75 @@ interface BreadcrumbItem {
 }
 
 export default function FoldersPage() {
+  const router = useRouter();
   const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
   const [currentPath, setCurrentPath] = useState<BreadcrumbItem[]>([
     { id: 'root', name: 'My Drive', path: '/' }
   ]);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createType, setCreateType] = useState<'folder' | 'document'>('folder');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [newItemName, setNewItemName] = useState('');
 
-  // Mock data - replace with actual API data
-  const [items, setItems] = useState<FolderItem[]>([
-    {
-      id: '1',
-      name: 'Project Documentation',
-      type: 'folder',
-      modified: '2 days ago',
-    },
-    {
-      id: '2',
-      name: 'Meeting Notes',
-      type: 'folder',
-      modified: '1 week ago',
-    },
-    {
-      id: '3',
-      name: 'README.md',
-      type: 'document',
-      size: '2.3 KB',
-      modified: '3 hours ago',
-    },
-    {
-      id: '4',
-      name: 'Architecture Overview.md',
-      type: 'document',
-      size: '8.1 KB',
-      modified: '1 day ago',
-      shared: true,
-    },
-    {
-      id: '5',
-      name: 'Personal Notes',
-      type: 'folder',
-      modified: '5 days ago',
-    },
-    {
-      id: '6',
-      name: 'Quick Ideas.md',
-      type: 'document',
-      size: '1.2 KB',
-      modified: '2 hours ago',
-    },
-  ]);
+  const [items, setItems] = useState<FolderItem[]>([]);
+
+  // Fetch folder contents from API
+  const fetchFolderContents = async (folderId: string | null = null) => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const url = folderId 
+        ? `http://localhost:8000/api/folders/${folderId}/contents`
+        : 'http://localhost:8000/api/folders/contents';
+      
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      
+      const response = await fetch(`${url}?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to fetch folder contents');
+      }
+
+      const data = await response.json();
+      setItems(data.data.items || []);
+      setCurrentPath(data.data.breadcrumbs || [{ id: 'root', name: 'My Drive', path: '/' }]);
+    } catch (error) {
+      console.error('Error fetching folder contents:', error);
+      setItems([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchFolderContents(currentFolderId);
+  }, [currentFolderId]);
+
+  // Search effect
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery || searchQuery === '') {
+        fetchFolderContents(currentFolderId);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   const handleItemSelect = (itemId: string) => {
     setSelectedItems(prev => 
@@ -92,35 +109,111 @@ export default function FoldersPage() {
   const handleItemDoubleClick = (item: FolderItem) => {
     if (item.type === 'folder') {
       // Navigate to folder
-      setCurrentPath(prev => [...prev, { id: item.id, name: item.name, path: `${prev[prev.length - 1].path}${item.name}/` }]);
-      // In real app, this would fetch folder contents
+      setCurrentFolderId(item.id);
+      setSelectedItems([]);
     } else {
       // Open document for editing
-      console.log('Opening document:', item.name);
+      router.push(`/documents/${item.id}/edit`);
     }
   };
 
   const handleBreadcrumbClick = (index: number) => {
-    setCurrentPath(prev => prev.slice(0, index + 1));
-    // In real app, this would fetch contents for the selected path
-  };
-
-  const handleCreate = () => {
-    // Mock creation - in real app this would call API
-    const newItem: FolderItem = {
-      id: Date.now().toString(),
-      name: createType === 'folder' ? 'New Folder' : 'New Document.md',
-      type: createType,
-      modified: 'Just now',
-      ...(createType === 'document' && { size: '0 KB' })
-    };
-    setItems(prev => [newItem, ...prev]);
-    setShowCreateModal(false);
-  };
-
-  const handleDelete = () => {
-    setItems(prev => prev.filter(item => !selectedItems.includes(item.id)));
+    const breadcrumb = currentPath[index];
+    if (breadcrumb.id === 'root') {
+      setCurrentFolderId(null);
+    } else {
+      setCurrentFolderId(breadcrumb.id);
+    }
     setSelectedItems([]);
+  };
+
+  const handleCreate = async () => {
+    if (!newItemName.trim()) return;
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      if (createType === 'folder') {
+        const response = await fetch('http://localhost:8000/api/folders', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: newItemName,
+            parent_id: currentFolderId,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          alert(error.message || 'Failed to create folder');
+          return;
+        }
+      } else {
+        // Create document
+        const response = await fetch('http://localhost:8000/api/documents', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: newItemName,
+            folder_id: currentFolderId,
+            content: '',
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          alert(error.message || 'Failed to create document');
+          return;
+        }
+      }
+      
+      // Refresh the folder contents
+      await fetchFolderContents(currentFolderId);
+      setShowCreateModal(false);
+      setNewItemName('');
+    } catch (error) {
+      console.error('Error creating item:', error);
+      alert('Failed to create item');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedItems.length} item(s)?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      for (const itemId of selectedItems) {
+        const item = items.find(i => i.id === itemId);
+        if (!item) continue;
+        
+        const url = item.type === 'folder' 
+          ? `http://localhost:8000/api/folders/${itemId}`
+          : `http://localhost:8000/api/documents/${itemId}`;
+        
+        await fetch(url, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      }
+      
+      // Refresh the folder contents
+      await fetchFolderContents(currentFolderId);
+      setSelectedItems([]);
+    } catch (error) {
+      console.error('Error deleting items:', error);
+      alert('Failed to delete some items');
+    }
   };
 
   // Filter items based on search query
@@ -294,7 +387,11 @@ export default function FoldersPage() {
       )}
 
       {/* Items */}
-      {filteredItems.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      ) : filteredItems.length === 0 ? (
         <div className="text-center py-12">
           {isSearching ? (
             <>
@@ -444,14 +541,26 @@ export default function FoldersPage() {
                 type="text"
                 placeholder={createType === 'folder' ? 'Folder name' : 'Document name'}
                 className="input input-bordered"
-                defaultValue={createType === 'folder' ? 'New Folder' : 'New Document.md'}
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreate();
+                }}
+                autoFocus
               />
             </div>
             <div className="modal-action">
-              <button onClick={() => setShowCreateModal(false)} className="btn">
+              <button onClick={() => {
+                setShowCreateModal(false);
+                setNewItemName('');
+              }} className="btn">
                 Cancel
               </button>
-              <button onClick={handleCreate} className="btn btn-primary">
+              <button 
+                onClick={handleCreate} 
+                className="btn btn-primary"
+                disabled={!newItemName.trim()}
+              >
                 Create
               </button>
             </div>

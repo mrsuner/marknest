@@ -32,6 +32,7 @@ return new class extends Migration
             $table->string('status', 20)->default('draft'); // draft, published, private
             $table->timestamp('last_accessed_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
             
             // Indexes
             $table->index('user_id', 'idx_documents_user_id');
