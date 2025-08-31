@@ -116,6 +116,271 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 lg:py-32 bg-gradient-to-br from-base-200 to-base-100">
+        <div className="max-w-6xl mx-auto px-4 lg:px-6">
+          <div className="text-center mb-16 lg:mb-20">
+            <h2 className="text-4xl lg:text-6xl font-light mb-6 text-base-content tracking-tight">
+              Simple <span className="text-primary font-medium">Pricing</span>
+            </h2>
+            <p className="text-xl lg:text-2xl text-base-content/60 max-w-3xl mx-auto font-light leading-relaxed">
+              Choose the perfect plan for your writing journey. Start free, upgrade when you&apos;re ready to grow.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
+            {/* Free Plan */}
+            <div className="bg-gradient-to-br from-base-100 to-base-200 rounded-3xl p-8 shadow-sm border border-base-300/50 relative">
+              <div className="text-center">
+                <h3 className="text-2xl font-medium text-base-content mb-2">Writer</h3>
+                <p className="text-base-content/70 mb-6">Perfect for getting started</p>
+                <div className="mb-8">
+                  <span className="text-4xl font-light text-base-content">Free</span>
+                  <span className="text-base-content/60 ml-2">forever</span>
+                </div>
+                <Link 
+                  href="/signup" 
+                  className="btn btn-outline w-full mb-8 hover:bg-primary hover:border-primary hover:text-primary-content transition-all duration-300"
+                >
+                  Get Started
+                </Link>
+              </div>
+              <ul className="space-y-4 text-base-content/70">
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Up to 5 documents</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Basic markdown editor</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Live preview</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Public sharing</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-3xl p-8 shadow-lg border-2 border-primary/20 relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-primary text-primary-content px-4 py-2 rounded-full text-sm font-medium">
+                  Most Popular
+                </span>
+              </div>
+              <div className="text-center">
+                <h3 className="text-2xl font-medium text-base-content mb-2">Author</h3>
+                <p className="text-base-content/70 mb-6">For serious writers</p>
+                <div className="mb-8">
+                  <span className="text-4xl font-light text-base-content">$9</span>
+                  <span className="text-base-content/60 ml-2">/month</span>
+                </div>
+                <Link 
+                  href="/signup" 
+                  className="btn btn-primary w-full mb-8 shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  Start Free Trial
+                </Link>
+              </div>
+              <ul className="space-y-4 text-base-content/70">
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Unlimited documents</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Advanced editor features</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Version history</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Private sharing with passwords</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Folder organization</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Priority support</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Team Plan */}
+            <div className="bg-gradient-to-br from-base-100 to-base-200 rounded-3xl p-8 shadow-sm border border-base-300/50 relative">
+              <div className="text-center">
+                <h3 className="text-2xl font-medium text-base-content mb-2">Publisher</h3>
+                <p className="text-base-content/70 mb-6">For teams and organizations</p>
+                <div className="mb-8">
+                  <span className="text-4xl font-light text-base-content">$29</span>
+                  <span className="text-base-content/60 ml-2">/month</span>
+                </div>
+                <Link 
+                  href="/signup" 
+                  className="btn btn-outline w-full mb-8 hover:bg-primary hover:border-primary hover:text-primary-content transition-all duration-300"
+                >
+                  Contact Sales
+                </Link>
+              </div>
+              <ul className="space-y-4 text-base-content/70">
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Everything in Author</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Up to 10 team members</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Collaboration features</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Advanced analytics</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Custom branding</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Dedicated support</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 lg:py-32 bg-base-100">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <div className="text-center mb-16 lg:mb-20">
+            <h2 className="text-4xl lg:text-6xl font-light mb-6 text-base-content tracking-tight">
+              Loved by <span className="text-primary font-medium">Writers</span>
+            </h2>
+            <p className="text-xl lg:text-2xl text-base-content/60 max-w-3xl mx-auto font-light leading-relaxed">
+              Join thousands of creators who have found their perfect writing sanctuary.
+            </p>
+          </div>
+          
+          <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
+            {/* Testimonial 1 */}
+            <div className="bg-gradient-to-br from-base-100 to-base-200 rounded-3xl p-8 lg:p-10 shadow-sm border border-base-300/50">
+              <div className="flex items-center gap-2 mb-6">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-warning" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-base-content/70 text-lg leading-relaxed mb-6">
+                &quot;MarkNest transformed my writing process. The clean interface and distraction-free environment 
+                helped me focus on what matters most - my words.&quot;
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <span className="text-primary font-medium text-lg">SK</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-base-content">Sarah Kim</h4>
+                  <p className="text-base-content/60 text-sm">Technical Writer</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 2 */}
+            <div className="bg-gradient-to-br from-base-100 to-base-200 rounded-3xl p-8 lg:p-10 shadow-sm border border-base-300/50">
+              <div className="flex items-center gap-2 mb-6">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-warning" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-base-content/70 text-lg leading-relaxed mb-6">
+                &quot;The live preview and version history features are game-changers. I can experiment with my writing 
+                without fear of losing previous versions.&quot;
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
+                  <span className="text-secondary font-medium text-lg">MJ</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-base-content">Marcus Johnson</h4>
+                  <p className="text-base-content/60 text-sm">Novelist</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="bg-gradient-to-br from-base-100 to-base-200 rounded-3xl p-8 lg:p-10 shadow-sm border border-base-300/50">
+              <div className="flex items-center gap-2 mb-6">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-warning" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-base-content/70 text-lg leading-relaxed mb-6">
+                &quot;Perfect for our content team. The collaboration features and folder organization 
+                keep our documentation projects running smoothly.&quot;
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center">
+                  <span className="text-accent font-medium text-lg">AR</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-base-content">Alex Rivera</h4>
+                  <p className="text-base-content/60 text-sm">Content Manager</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 lg:py-32 bg-gradient-to-br from-primary to-accent relative overflow-hidden">
         <div className="absolute inset-0 bg-black/5"></div>

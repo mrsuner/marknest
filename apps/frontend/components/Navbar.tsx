@@ -17,6 +17,7 @@ export default function Navbar() {
           </div>
           <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
             <li><Link href="/">Home</Link></li>
+            <li><Link href="#pricing">Pricing</Link></li>
             <li><Link href="/login">Login</Link></li>
             <li><Link href="/signup">Sign Up</Link></li>
           </ul>
@@ -28,13 +29,20 @@ export default function Navbar() {
       
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal px-1">
-          <li><Link href="/">Home</Link></li>
-          <li><Link href="/login">Login</Link></li>
-          <li><Link href="/signup">Sign Up</Link></li>
+          <li><Link href="/" className="font-medium">Home</Link></li>
+          <li><Link href="#pricing" className="font-medium">Pricing</Link></li>
         </ul>
       </div>
       
       <div className="navbar-end">
+        <div className="hidden lg:flex items-center gap-2 mr-2">
+          <Link href="/login" className="btn btn-ghost font-medium">
+            Login
+          </Link>
+          <Link href="/signup" className="btn btn-primary font-medium">
+            Sign Up
+          </Link>
+        </div>
         <button
           onClick={toggleTheme}
           className="btn btn-ghost btn-circle"
