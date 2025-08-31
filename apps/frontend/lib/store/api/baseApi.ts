@@ -17,6 +17,6 @@ const baseQuery = fetchBaseQuery({
 export const baseApi = createApi({
   reducerPath: 'baseApi',
   baseQuery,
-  tagTypes: ['Folder', 'Document', 'FolderContents'],
+  tagTypes: ['Folder', 'Document', 'FolderContents', 'UserPreferences'],
   endpoints: () => ({}),
 })

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\UserPreferenceController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/request-otp', [AuthController::class, 'requestOtp']);
@@ -26,6 +27,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('user')->group(function () {
         Route::get('profile', [UserController::class, 'profile']);
         
+        // User preferences
+        Route::get('preferences', [UserPreferenceController::class, 'show']);
+        Route::put('preferences', [UserPreferenceController::class, 'update']);
+        Route::post('preferences/reset', [UserPreferenceController::class, 'reset']);
     });
 
     // Document management

@@ -3,17 +3,20 @@ import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, 
 import storage from 'redux-persist/lib/storage'
 import uiSlice from './slices/uiSlice'
 import { api } from './api/api'
+import { baseApi } from './api/baseApi'
+import './api/preferencesApi' // Import to ensure the endpoints are injected
 
 const persistConfig = {
   key: 'root',
   storage,
   whitelist: ['ui'], // Only persist UI state
-  blacklist: [api.reducerPath], // Don't persist API cache
+  blacklist: [api.reducerPath, baseApi.reducerPath], // Don't persist API cache
 }
 
 const rootReducer = combineReducers({
   ui: uiSlice,
   [api.reducerPath]: api.reducer,
+  [baseApi.reducerPath]: baseApi.reducer,
 })
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)
@@ -26,7 +29,8 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     })
-    .concat(api.middleware),
+    .concat(api.middleware)
+    .concat(baseApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 })
 

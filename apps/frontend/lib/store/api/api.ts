@@ -36,14 +36,22 @@ export interface Document {
   title: string
   slug: string
   content: string
+  rendered_html?: string
   user_id: string
   folder_id: string | null
   size: number
   word_count: number
+  character_count: number
+  version_number: number
   is_favorite: boolean
   is_archived: boolean
+  is_trashed?: boolean
+  tags?: string[]
+  metadata?: any
+  status: string
   created_at: string
   updated_at: string
+  last_accessed_at?: string
 }
 
 export interface FolderContentsItem {
