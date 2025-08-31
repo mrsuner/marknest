@@ -1,4 +1,4 @@
-import { baseApi } from './baseApi'
+import { api, Document } from './api'
 
 export interface Folder {
   id: string
@@ -16,20 +16,6 @@ export interface Folder {
   documents_count?: number
 }
 
-export interface Document {
-  id: string
-  title: string
-  slug: string
-  content: string
-  user_id: string
-  folder_id: string | null
-  size: number
-  word_count: number
-  is_favorite: boolean
-  is_archived: boolean
-  created_at: string
-  updated_at: string
-}
 
 export interface FolderContentsItem {
   id: string
@@ -96,7 +82,7 @@ export interface SearchResponse {
   message: string
 }
 
-export const foldersApi = baseApi.injectEndpoints({
+export const foldersApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getFolderTree: builder.query<{ data: Folder[]; message: string }, void>({
       query: () => 'folders',

@@ -1,5 +1,4 @@
-import { baseApi } from './baseApi'
-import { Document } from './foldersApi'
+import { api, Document } from './api'
 
 export interface CreateDocumentRequest {
   title: string
@@ -15,6 +14,8 @@ export interface UpdateDocumentRequest {
   folder_id?: string | null
   tags?: string[]
   status?: string
+  is_auto_save?: boolean
+  change_summary?: string
 }
 
 export interface MoveDocumentRequest {
@@ -42,7 +43,7 @@ export interface DocumentVersion {
   user_id: string
 }
 
-export const documentsApi = baseApi.injectEndpoints({
+export const documentsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getDocuments: builder.query<{ data: Document[]; message: string }, { folder_id?: string; status?: string; favorites?: boolean; archived?: boolean; page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' }>({
       query: (params) => ({
