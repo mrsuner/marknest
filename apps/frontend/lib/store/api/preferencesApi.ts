@@ -32,6 +32,7 @@ export interface PreferencesResponse {
 }
 
 export const preferencesApi = baseApi.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getUserPreferences: builder.query<PreferencesResponse, void>({
       query: () => ({

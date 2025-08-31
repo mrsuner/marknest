@@ -213,7 +213,9 @@ class DocumentController extends Controller
             
             // Create version if content or title changed
             if (isset($validated['content']) || isset($validated['title'])) {
-                $versionNumber = $doc->version_number + 1;
+                // Get the highest version number for this document to prevent race conditions
+                $maxVersion = DocumentVersion::where('document_id', $doc->id)->max('version_number') ?? 0;
+                $versionNumber = $maxVersion + 1;
                 $updateData['version_number'] = $versionNumber;
                 
                 // Create version entry

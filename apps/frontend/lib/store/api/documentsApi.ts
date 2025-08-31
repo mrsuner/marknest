@@ -44,6 +44,7 @@ export interface DocumentVersion {
 }
 
 export const documentsApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getDocuments: builder.query<{ data: Document[]; message: string }, { folder_id?: string; status?: string; favorites?: boolean; archived?: boolean; page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' }>({
       query: (params) => ({

@@ -16,17 +16,46 @@ interface DocumentEditorProps {
 interface CrepeEditorProps {
   isFullscreen: boolean;
   content: string;
+  onContentChange: (content: string) => void;
 }
 
 // Using Document type from API instead
 
-const CrepeEditor: React.FC<CrepeEditorProps> = ({ isFullscreen, content }) => {
+const CrepeEditor: React.FC<CrepeEditorProps> = ({ isFullscreen, content, onContentChange }) => {
+  const [editorInstance, setEditorInstance] = useState<any>(null);
+
   useEditor((root) => {
-    return new Crepe({
+    const crepe = new Crepe({
       root,
       defaultValue: content || '# Welcome to Marknest\n\nStart writing your markdown content here...'
     });
+    
+    setEditorInstance(crepe);
+    return crepe;
   }, [content]);
+
+  // Set up an interval to periodically check for content changes
+  useEffect(() => {
+    if (!editorInstance) return;
+    
+    let lastContent = content;
+    const intervalId = setInterval(() => {
+      try {
+        const currentContent = editorInstance.getMarkdown?.() || '';
+        if (currentContent !== lastContent) {
+          lastContent = currentContent;
+          onContentChange(currentContent);
+        }
+      } catch (error) {
+        // Ignore errors when trying to get content
+        console.warn('Could not get editor content:', error);
+      }
+    }, 1000); // Check every second
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [editorInstance, onContentChange]);
 
   return (
     <div
@@ -99,6 +128,10 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
     setTitle(newTitle);
   }, []);
 
+  const handleContentChange = useCallback((newContent: string) => {
+    setContent(newContent);
+  }, []);
+
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
   };
@@ -143,9 +176,12 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
   }
 
   if (error || !document) {
-    const errorMessage = error && 'data' in error && error.data 
-      ? (typeof error.data === 'object' && error.data && 'message' in error.data ? (error.data as any).message : 'Failed to load document')
-      : 'Document not found';
+    let errorMessage = 'Document not found';
+    if (error && 'data' in error && error.data && typeof error.data === 'object' && 'message' in error.data) {
+      errorMessage = (error.data as { message: string }).message;
+    } else if (error) {
+      errorMessage = 'Failed to load document';
+    }
       
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -223,6 +259,7 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
             <CrepeEditor 
               isFullscreen={true} 
               content={content}
+              onContentChange={handleContentChange}
             />
           </MilkdownProvider>
         </div>
@@ -274,10 +311,7 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
               <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
-              {error && 'data' in error && error.data 
-                ? (typeof error.data === 'object' && error.data && 'message' in error.data ? (error.data as any).message : 'Error occurred')
-                : 'Error occurred'
-              }
+              Error occurred
             </div>
           )}
           <div className="text-xs text-base-content/50">
@@ -295,6 +329,7 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
           <CrepeEditor 
             isFullscreen={false} 
             content={content}
+            onContentChange={handleContentChange}
           />
         </MilkdownProvider>
       </div>

@@ -83,6 +83,7 @@ export interface SearchResponse {
 }
 
 export const foldersApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getFolderTree: builder.query<{ data: Folder[]; message: string }, void>({
       query: () => 'folders',
