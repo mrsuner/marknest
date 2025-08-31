@@ -9,6 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@milkdown/core": "^7.15.5",
+    "@milkdown/crepe": "^7.15.5",
+    "@milkdown/kit": "^7.15.5",
+    "@milkdown/plugin-history": "^7.15.5",
+    "@milkdown/plugin-tooltip": "^7.15.5",
+    "@milkdown/react": "^7.15.5",
     "@reduxjs/toolkit": "^2.8.2",
     "daisyui": "^5.0.54",
     "next": "15.5.2",
