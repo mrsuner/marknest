@@ -1,240 +1,220 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface FolderItem {
-  id: string;
-  name: string;
-  type: 'folder' | 'document';
-  size?: string;
-  modified: string;
-  shared?: boolean;
-}
-
-interface BreadcrumbItem {
-  id: string;
-  name: string;
-  path: string;
-}
+import { useAppSelector, useAppDispatch } from '@/lib/store/hooks';
+import { 
+  useGetFolderContentsQuery, 
+  useCreateFolderMutation,
+  useDeleteFolderMutation,
+  useLazySearchFoldersQuery,
+  useCreateDocumentMutation,
+  useDeleteDocumentMutation,
+  type FolderContentsItem
+} from '@/lib/store/api/api';
+import {
+  setViewMode,
+  setCurrentFolder,
+  setSearchQuery,
+  clearSearchQuery,
+  selectItem,
+  deselectItem,
+  selectAll,
+  clearSelection,
+  openCreateFolderModal,
+  closeCreateFolderModal,
+  openCreateDocumentModal,
+  closeCreateDocumentModal,
+  openDeleteConfirm,
+  closeDeleteConfirm,
+} from '@/lib/store/slices/uiSlice';
+import { useState } from 'react';
 
 export default function FoldersPage() {
   const router = useRouter();
-  const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
-  const [currentPath, setCurrentPath] = useState<BreadcrumbItem[]>([
-    { id: 'root', name: 'My Drive', path: '/' }
-  ]);
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createType, setCreateType] = useState<'folder' | 'document'>('folder');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  
+  // Redux state
+  const {
+    viewMode,
+    currentFolderId,
+    searchQuery,
+    selectedItems,
+  } = useAppSelector((state) => state.ui.folders);
+  
+  const {
+    createFolder: createFolderModalOpen,
+    createDocument: createDocumentModalOpen,
+    deleteConfirm,
+  } = useAppSelector((state) => state.ui.modals);
+
+  // Local state
   const [newItemName, setNewItemName] = useState('');
 
-  const [items, setItems] = useState<FolderItem[]>([]);
+  // RTK Query hooks
+  const {
+    data: folderContents,
+    error: folderError,
+    isLoading: isLoadingContents,
+    refetch: refetchContents,
+  } = useGetFolderContentsQuery(currentFolderId);
 
-  // Fetch folder contents from API
-  const fetchFolderContents = async (folderId: string | null = null) => {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const url = folderId 
-        ? `http://localhost:8000/api/folders/${folderId}/contents`
-        : 'http://localhost:8000/api/folders/contents';
-      
-      const params = new URLSearchParams();
-      if (searchQuery) params.append('search', searchQuery);
-      
-      const response = await fetch(`${url}?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-        },
-      });
+  const [createFolder, { isLoading: isCreatingFolder }] = useCreateFolderMutation();
+  const [createDocument, { isLoading: isCreatingDocument }] = useCreateDocumentMutation();
+  const [deleteFolder] = useDeleteFolderMutation();
+  const [deleteDocument] = useDeleteDocumentMutation();
+  
+  const [searchFolders, { data: searchResults, isLoading: isSearching }] = useLazySearchFoldersQuery();
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          router.push('/login');
-          return;
-        }
-        throw new Error('Failed to fetch folder contents');
-      }
-
-      const data = await response.json();
-      setItems(data.data.items || []);
-      setCurrentPath(data.data.breadcrumbs || [{ id: 'root', name: 'My Drive', path: '/' }]);
-    } catch (error) {
-      console.error('Error fetching folder contents:', error);
-      setItems([]);
-    } finally {
-      setIsLoading(false);
+  // Memoized filtered items
+  const items: FolderContentsItem[] = useMemo(() => {
+    if (searchQuery && searchResults) {
+      // Map search results to FolderContentsItem format
+      return searchResults.data.map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        modified: item.modified,
+        size: item.size,
+        // Add default values for missing properties
+        documentCount: undefined,
+        color: undefined,
+        icon: undefined,
+        shared: false,
+        favorite: false,
+      }));
     }
-  };
+    return folderContents?.data?.items || [];
+  }, [searchQuery, searchResults, folderContents]);
 
-  // Initial load
-  useEffect(() => {
-    fetchFolderContents(currentFolderId);
-  }, [currentFolderId]);
+  const breadcrumbs = useMemo(() => {
+    return folderContents?.data?.breadcrumbs || [{ id: 'root', name: 'My Drive', path: '/' }];
+  }, [folderContents]);
 
-  // Search effect
+  // Search effect with debouncing
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (searchQuery || searchQuery === '') {
-        fetchFolderContents(currentFolderId);
+      if (searchQuery) {
+        searchFolders({ query: searchQuery });
       }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [searchQuery, searchFolders]);
 
+  // Handle authentication errors
+  useEffect(() => {
+    if (folderError && 'status' in folderError && folderError.status === 401) {
+      router.push('/login');
+    }
+  }, [folderError, router]);
+
+  // Event handlers
   const handleItemSelect = (itemId: string) => {
-    setSelectedItems(prev => 
-      prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedItems.length === filteredItems.length) {
-      setSelectedItems([]);
+    if (selectedItems.includes(itemId)) {
+      dispatch(deselectItem(itemId));
     } else {
-      setSelectedItems(filteredItems.map(item => item.id));
+      dispatch(selectItem(itemId));
     }
   };
 
-  const handleItemDoubleClick = (item: FolderItem) => {
-    if (item.type === 'folder') {
-      // Navigate to folder
-      setCurrentFolderId(item.id);
-      setSelectedItems([]);
+  const handleSelectAll = () => {
+    if (selectedItems.length === items.length) {
+      dispatch(clearSelection());
     } else {
-      // Open document for editing
+      dispatch(selectAll(items.map(item => item.id)));
+    }
+  };
+
+  const handleItemDoubleClick = (item: FolderContentsItem) => {
+    if (item.type === 'folder') {
+      dispatch(setCurrentFolder(item.id));
+      dispatch(clearSelection());
+    } else {
       router.push(`/documents/${item.id}/edit`);
     }
   };
 
   const handleBreadcrumbClick = (index: number) => {
-    const breadcrumb = currentPath[index];
+    const breadcrumb = breadcrumbs[index];
     if (breadcrumb.id === 'root') {
-      setCurrentFolderId(null);
+      dispatch(setCurrentFolder(null));
     } else {
-      setCurrentFolderId(breadcrumb.id);
+      dispatch(setCurrentFolder(breadcrumb.id));
     }
-    setSelectedItems([]);
+    dispatch(clearSelection());
   };
 
   const handleCreate = async () => {
     if (!newItemName.trim()) return;
     
     try {
-      const token = localStorage.getItem('auth_token');
-      
-      if (createType === 'folder') {
-        const response = await fetch('http://localhost:8000/api/folders', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: newItemName,
-            parent_id: currentFolderId,
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          alert(error.message || 'Failed to create folder');
-          return;
-        }
-      } else {
-        // Create document
-        const response = await fetch('http://localhost:8000/api/documents', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: newItemName,
-            folder_id: currentFolderId,
-            content: '',
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          alert(error.message || 'Failed to create document');
-          return;
-        }
+      if (createFolderModalOpen) {
+        await createFolder({
+          name: newItemName,
+          parent_id: currentFolderId,
+        }).unwrap();
+        dispatch(closeCreateFolderModal());
+      } else if (createDocumentModalOpen) {
+        await createDocument({
+          title: newItemName,
+          folder_id: currentFolderId,
+          content: '',
+        }).unwrap();
+        dispatch(closeCreateDocumentModal());
       }
       
-      // Refresh the folder contents
-      await fetchFolderContents(currentFolderId);
-      setShowCreateModal(false);
       setNewItemName('');
+      refetchContents();
     } catch (error) {
       console.error('Error creating item:', error);
       alert('Failed to create item');
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${selectedItems.length} item(s)?`)) {
-      return;
-    }
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.itemId || !deleteConfirm.itemType) return;
 
     try {
-      const token = localStorage.getItem('auth_token');
-      
-      for (const itemId of selectedItems) {
-        const item = items.find(i => i.id === itemId);
-        if (!item) continue;
-        
-        const url = item.type === 'folder' 
-          ? `http://localhost:8000/api/folders/${itemId}`
-          : `http://localhost:8000/api/documents/${itemId}`;
-        
-        await fetch(url, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+      if (deleteConfirm.itemType === 'folder') {
+        await deleteFolder({ id: deleteConfirm.itemId }).unwrap();
+      } else {
+        await deleteDocument(deleteConfirm.itemId).unwrap();
       }
       
-      // Refresh the folder contents
-      await fetchFolderContents(currentFolderId);
-      setSelectedItems([]);
+      dispatch(closeDeleteConfirm());
+      dispatch(clearSelection());
+      refetchContents();
     } catch (error) {
-      console.error('Error deleting items:', error);
-      alert('Failed to delete some items');
+      console.error('Error deleting item:', error);
+      alert('Failed to delete item');
     }
   };
 
-  // Filter items based on search query
-  const filteredItems = items.filter(item => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return item.name.toLowerCase().includes(query);
-  });
+  const handleDeleteSelected = () => {
+    if (selectedItems.length === 0) return;
+    
+    const firstItem = items.find(item => item.id === selectedItems[0]);
+    if (firstItem) {
+      dispatch(openDeleteConfirm({
+        id: selectedItems[0],
+        name: selectedItems.length > 1 ? `${selectedItems.length} items` : firstItem.name,
+        type: firstItem.type,
+      }));
+    }
+  };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
-    setSearchQuery(query);
-    setIsSearching(query.length > 0);
-    setSelectedItems([]); // Clear selections when searching
+    dispatch(setSearchQuery(query));
+    dispatch(clearSelection());
   };
 
   const clearSearch = () => {
-    setSearchQuery('');
-    setIsSearching(false);
+    dispatch(clearSearchQuery());
   };
 
+  // Component icons
   const FolderIcon = () => (
     <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
       <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
@@ -247,6 +227,9 @@ export default function FoldersPage() {
     </svg>
   );
 
+  const isLoading = isLoadingContents || isSearching;
+  const isSearchActive = searchQuery.length > 0;
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -257,12 +240,12 @@ export default function FoldersPage() {
           {/* Breadcrumb */}
           <div className="breadcrumbs text-sm">
             <ul>
-              {currentPath.map((crumb, index) => (
+              {breadcrumbs.map((crumb, index) => (
                 <li key={crumb.id}>
                   <button
                     onClick={() => handleBreadcrumbClick(index)}
                     className="hover:text-primary transition-colors"
-                    disabled={index === currentPath.length - 1}
+                    disabled={index === breadcrumbs.length - 1}
                   >
                     {crumb.name}
                   </button>
@@ -298,19 +281,20 @@ export default function FoldersPage() {
               </svg>
             )}
           </div>
+
           {/* View Toggle */}
           <div className="join">
             <button
-              onClick={() => setViewType('grid')}
-              className={`btn btn-sm join-item ${viewType === 'grid' ? 'btn-active' : 'btn-outline'}`}
+              onClick={() => dispatch(setViewMode('grid'))}
+              className={`btn btn-sm join-item ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
             </button>
             <button
-              onClick={() => setViewType('list')}
-              className={`btn btn-sm join-item ${viewType === 'list' ? 'btn-active' : 'btn-outline'}`}
+              onClick={() => dispatch(setViewMode('list'))}
+              className={`btn btn-sm join-item ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -328,13 +312,13 @@ export default function FoldersPage() {
             </div>
             <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 border border-base-300">
               <li>
-                <button onClick={() => { setCreateType('folder'); setShowCreateModal(true); }}>
+                <button onClick={() => dispatch(openCreateFolderModal())}>
                   <FolderIcon />
                   New Folder
                 </button>
               </li>
               <li>
-                <button onClick={() => { setCreateType('document'); setShowCreateModal(true); }}>
+                <button onClick={() => dispatch(openCreateDocumentModal())}>
                   <DocumentIcon />
                   New Document
                 </button>
@@ -345,7 +329,7 @@ export default function FoldersPage() {
       </div>
 
       {/* Search Results Indicator */}
-      {isSearching && (
+      {isSearchActive && (
         <div className="mb-4 p-3 bg-info/10 rounded-lg border border-info/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -353,7 +337,7 @@ export default function FoldersPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <span className="text-sm">
-                Found {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'} matching "{searchQuery}"
+                Found {items.length} {items.length === 1 ? 'item' : 'items'} matching &ldquo;{searchQuery}&rdquo;
               </span>
             </div>
             <button onClick={clearSearch} className="btn btn-ghost btn-xs">
@@ -376,7 +360,7 @@ export default function FoldersPage() {
               </svg>
               Share
             </button>
-            <button onClick={handleDelete} className="btn btn-sm btn-ghost text-error">
+            <button onClick={handleDeleteSelected} className="btn btn-sm btn-ghost text-error">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
@@ -391,9 +375,9 @@ export default function FoldersPage() {
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
-      ) : filteredItems.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="text-center py-12">
-          {isSearching ? (
+          {isSearchActive ? (
             <>
               <div className="inline-flex items-center justify-center w-16 h-16 bg-base-200 rounded-full mb-4">
                 <svg className="w-8 h-8 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,7 +401,7 @@ export default function FoldersPage() {
               <h3 className="text-lg font-medium text-base-content mb-2">No items in this folder</h3>
               <p className="text-base-content/60 mb-4">Create your first folder or document to get started</p>
               <button 
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => dispatch(openCreateFolderModal())}
                 className="btn btn-primary btn-sm"
               >
                 Create New
@@ -425,9 +409,9 @@ export default function FoldersPage() {
             </>
           )}
         </div>
-      ) : viewType === 'grid' ? (
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-          {filteredItems.map((item) => (
+          {items.map((item) => (
             <div
               key={item.id}
               className={`group relative p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer hover:shadow-md ${
@@ -447,10 +431,18 @@ export default function FoldersPage() {
                 </h3>
                 <div className="flex items-center gap-2 text-xs text-base-content/60">
                   {item.size && <span>{item.size}</span>}
+                  {item.documentCount !== undefined && item.type === 'folder' && (
+                    <span>{item.documentCount} items</span>
+                  )}
                   <span>{item.modified}</span>
                   {item.shared && (
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0112 21c4.474 0 8.268-3.12 9.032-7.326" />
+                    </svg>
+                  )}
+                  {item.favorite && (
+                    <svg className="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                     </svg>
                   )}
                 </div>
@@ -473,7 +465,7 @@ export default function FoldersPage() {
           <div className="flex items-center p-4 border-b border-base-300 bg-base-50">
             <input
               type="checkbox"
-              checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
+              checked={selectedItems.length === items.length && items.length > 0}
               onChange={handleSelectAll}
               className="checkbox checkbox-primary checkbox-sm mr-4"
             />
@@ -486,7 +478,7 @@ export default function FoldersPage() {
           </div>
           
           {/* List Items */}
-          {filteredItems.map((item) => (
+          {items.map((item) => (
             <div
               key={item.id}
               className={`flex items-center p-4 border-b border-base-300 last:border-b-0 hover:bg-base-50 cursor-pointer transition-colors ${
@@ -506,9 +498,14 @@ export default function FoldersPage() {
                 <div className="col-span-6 flex items-center gap-3">
                   {item.type === 'folder' ? <FolderIcon /> : <DocumentIcon />}
                   <span className="font-medium text-base-content">{item.name}</span>
+                  {item.favorite && (
+                    <svg className="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  )}
                 </div>
                 <div className="col-span-2 text-sm text-base-content/60">
-                  {item.size || '—'}
+                  {item.size || (item.documentCount !== undefined && item.type === 'folder' ? `${item.documentCount} items` : '—')}
                 </div>
                 <div className="col-span-3 text-sm text-base-content/60">
                   {item.modified}
@@ -516,7 +513,7 @@ export default function FoldersPage() {
                 <div className="col-span-1">
                   {item.shared && (
                     <svg className="w-4 h-4 text-base-content/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0112 21c4.474 0 8.268-3.12 9.032-7.326" />
                     </svg>
                   )}
                 </div>
@@ -526,20 +523,18 @@ export default function FoldersPage() {
         </div>
       )}
 
-      {/* Create Modal */}
-      {showCreateModal && (
+      {/* Create Folder Modal */}
+      {createFolderModalOpen && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">
-              Create New {createType === 'folder' ? 'Folder' : 'Document'}
-            </h3>
+            <h3 className="font-bold text-lg mb-4">Create New Folder</h3>
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Name</span>
               </label>
               <input
                 type="text"
-                placeholder={createType === 'folder' ? 'Folder name' : 'Document name'}
+                placeholder="Folder name"
                 className="input input-bordered"
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
@@ -551,7 +546,7 @@ export default function FoldersPage() {
             </div>
             <div className="modal-action">
               <button onClick={() => {
-                setShowCreateModal(false);
+                dispatch(closeCreateFolderModal());
                 setNewItemName('');
               }} className="btn">
                 Cancel
@@ -559,9 +554,75 @@ export default function FoldersPage() {
               <button 
                 onClick={handleCreate} 
                 className="btn btn-primary"
-                disabled={!newItemName.trim()}
+                disabled={!newItemName.trim() || isCreatingFolder}
               >
-                Create
+                {isCreatingFolder ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Document Modal */}
+      {createDocumentModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Create New Document</h3>
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">Name</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Document name"
+                className="input input-bordered"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreate();
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="modal-action">
+              <button onClick={() => {
+                dispatch(closeCreateDocumentModal());
+                setNewItemName('');
+              }} className="btn">
+                Cancel
+              </button>
+              <button 
+                onClick={handleCreate} 
+                className="btn btn-primary"
+                disabled={!newItemName.trim() || isCreatingDocument}
+              >
+                {isCreatingDocument ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.isOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Confirm Deletion</h3>
+            <p className="mb-4">
+              Are you sure you want to delete &ldquo;{deleteConfirm.itemName}&rdquo;? This action cannot be undone.
+            </p>
+            <div className="modal-action">
+              <button 
+                onClick={() => dispatch(closeDeleteConfirm())} 
+                className="btn"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteConfirm} 
+                className="btn btn-error"
+              >
+                Delete
               </button>
             </div>
           </div>

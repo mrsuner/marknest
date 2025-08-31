@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from './ThemeProvider';
+import { env } from '@/lib/config/env';
 
 interface User {
   id: number;
@@ -45,7 +46,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
     const token = localStorage.getItem('auth_token');
     
     try {
-      await fetch('http://localhost:8000/api/auth/logout', {
+      await fetch(`${env.API_BASE_URL}/api/auth/logout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

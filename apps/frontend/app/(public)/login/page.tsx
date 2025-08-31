@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { env } from '@/lib/config/env';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function LoginPage() {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:8000/api/auth/request-otp', {
+      const response = await fetch(`${env.API_BASE_URL}/api/auth/request-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,7 +56,7 @@ export default function LoginPage() {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:8000/api/auth/verify-otp', {
+      const response = await fetch(`${env.API_BASE_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

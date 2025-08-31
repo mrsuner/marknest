@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { env } from '@/lib/config/env';
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function VerifyPage() {
         ? { otp, magic_link: true }
         : { email: email || localStorage.getItem('pending_email') || '', otp };
       
-      const response = await fetch('http://localhost:8000/api/auth/verify-otp', {
+      const response = await fetch(`${env.API_BASE_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
