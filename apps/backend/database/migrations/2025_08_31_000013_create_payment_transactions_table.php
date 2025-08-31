@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payment_transactions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('subscription_id')->nullable()->constrained()->onDelete('set null');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
+            $table->foreignUlid('subscription_id')->nullable()->constrained()->onDelete('set null');
             $table->string('transaction_id', 100)->unique(); // Stripe payment intent ID
             $table->string('stripe_payment_method_id')->nullable();
             $table->string('type', 20); // payment, refund, subscription, invoice
@@ -45,11 +45,6 @@ return new class extends Migration
             $table->index(['user_id', 'type'], 'idx_payment_transactions_user_type');
             $table->index(['user_id', 'status'], 'idx_payment_transactions_user_status');
             
-            // Foreign keys with custom names
-            $table->foreign('user_id', 'fk_payment_transactions_users_user_id')
-                  ->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('subscription_id', 'fk_payment_transactions_subscriptions_subscription_id')
-                  ->references('id')->on('subscriptions')->onDelete('set null');
         });
     }
 

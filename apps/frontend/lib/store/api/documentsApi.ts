@@ -160,8 +160,33 @@ export const documentsApi = api.injectEndpoints({
       providesTags: ['Document'],
     }),
     
-    getRecent: builder.query<{ data: Document[]; message: string }, void>({
-      query: () => 'collections/recent',
+    getRecent: builder.query<{ 
+      data: Document[]; 
+      meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        from: number | null;
+        to: number | null;
+      };
+      links: {
+        first: string;
+        last: string;
+        prev: string | null;
+        next: string | null;
+      };
+    }, { 
+      page?: number; 
+      per_page?: number; 
+      search?: string; 
+      sort_by?: 'updated_at' | 'title' | 'word_count' | 'created_at';
+      sort_direction?: 'asc' | 'desc';
+    }>({
+      query: (params) => ({
+        url: 'collections/recent',
+        params,
+      }),
       providesTags: ['Document'],
     }),
     

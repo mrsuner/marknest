@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('media_files', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('document_id')->nullable()->constrained()->onDelete('cascade');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
+        
             $table->string('original_name');
             $table->string('filename'); // Generated unique filename
             $table->string('mime_type', 100);
@@ -35,19 +35,11 @@ return new class extends Migration
             
             // Indexes
             $table->index('user_id', 'idx_media_files_user_id');
-            $table->index('document_id', 'idx_media_files_document_id');
             $table->index('filename', 'idx_media_files_filename');
             $table->index('mime_type', 'idx_media_files_mime_type');
             $table->index('hash', 'idx_media_files_hash');
             $table->index('is_public', 'idx_media_files_is_public');
-            $table->index('created_at', 'idx_media_files_created_at');
-            $table->index(['user_id', 'document_id'], 'idx_media_files_user_document');
-            
-            // Foreign keys with custom names
-            $table->foreign('user_id', 'fk_media_files_users_user_id')
-                  ->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('document_id', 'fk_media_files_documents_document_id')
-                  ->references('id')->on('documents')->onDelete('cascade');
+            $table->index('created_at', 'idx_media_files_created_at');            
         });
     }
 

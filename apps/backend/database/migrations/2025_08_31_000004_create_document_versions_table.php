@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('document_versions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('document_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('document_id')->constrained()->onDelete('cascade');
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
             $table->integer('version_number');
             $table->string('title');
             $table->longText('content');
@@ -35,12 +35,6 @@ return new class extends Migration
             $table->index('created_at', 'idx_document_versions_created_at');
             $table->index(['document_id', 'version_number'], 'idx_document_versions_doc_version');
             $table->unique(['document_id', 'version_number'], 'unq_document_versions_doc_version');
-            
-            // Foreign keys with custom names
-            $table->foreign('document_id', 'fk_document_versions_documents_document_id')
-                  ->references('id')->on('documents')->onDelete('cascade');
-            $table->foreign('user_id', 'fk_document_versions_users_user_id')
-                  ->references('id')->on('users')->onDelete('cascade');
         });
     }
 

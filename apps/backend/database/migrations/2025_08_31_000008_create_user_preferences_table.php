@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_preferences', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
             $table->string('theme', 20)->default('light'); // light, dark, auto
             $table->string('editor_theme', 50)->default('default');
             $table->string('editor_font_family', 100)->default('monospace');
@@ -37,9 +37,6 @@ return new class extends Migration
             // Indexes
             $table->unique('user_id', 'unq_user_preferences_user_id');
             
-            // Foreign keys with custom names
-            $table->foreign('user_id', 'fk_user_preferences_users_user_id')
-                  ->references('id')->on('users')->onDelete('cascade');
         });
     }
 

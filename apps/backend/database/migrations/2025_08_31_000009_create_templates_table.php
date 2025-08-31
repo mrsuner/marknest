@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('templates', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->longText('content');
             $table->string('category', 50); // personal, business, academic, technical
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignUlid('user_id')->nullable()->constrained()->onDelete('set null');
             $table->boolean('is_public')->default(false);
             $table->boolean('is_featured')->default(false);
             $table->integer('usage_count')->default(0);
@@ -36,9 +36,6 @@ return new class extends Migration
             $table->index('usage_count', 'idx_templates_usage_count');
             $table->index(['is_public', 'category'], 'idx_templates_public_category');
             
-            // Foreign keys with custom names
-            $table->foreign('user_id', 'fk_templates_users_user_id')
-                  ->references('id')->on('users')->onDelete('set null');
         });
     }
 

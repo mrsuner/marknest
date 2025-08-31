@@ -8,9 +8,21 @@ import './api/preferencesApi' // Import to ensure the endpoints are injected
 
 const persistConfig = {
   key: 'root',
+  version: 1, // Increment to reset persisted state after ULID migration
   storage,
   whitelist: ['ui'], // Only persist UI state
   blacklist: [api.reducerPath, baseApi.reducerPath], // Don't persist API cache
+  migrate: (state: any) => {
+    // Reset folder state if currentFolderId is not a valid ULID (26 chars starting with 01)
+    if (state && state.ui && state.ui.folders && state.ui.folders.currentFolderId) {
+      const folderId = state.ui.folders.currentFolderId
+      if (typeof folderId === 'number' || (typeof folderId === 'string' && (!folderId.startsWith('01') || folderId.length !== 26))) {
+        state.ui.folders.currentFolderId = null
+        state.ui.folders.selectedItems = []
+      }
+    }
+    return state
+  }
 }
 
 const rootReducer = combineReducers({

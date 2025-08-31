@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('document_media', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('document_id')->constrained()->onDelete('cascade');
-            $table->foreignId('media_file_id')->constrained()->onDelete('cascade');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('document_id')->constrained()->onDelete('cascade');
+            $table->foreignUlid('media_file_id')->constrained()->onDelete('cascade');
             $table->string('usage_context', 50)->nullable(); // inline, attachment, cover, etc.
             $table->integer('order')->default(0); // For ordering media in document
             $table->json('metadata')->nullable(); // Position, size, alt text override, etc.
@@ -26,12 +26,6 @@ return new class extends Migration
             $table->index('usage_context', 'idx_document_media_usage_context');
             $table->index('order', 'idx_document_media_order');
             $table->unique(['document_id', 'media_file_id'], 'unq_document_media_doc_media');
-            
-            // Foreign keys with custom names
-            $table->foreign('document_id', 'fk_document_media_documents_document_id')
-                  ->references('id')->on('documents')->onDelete('cascade');
-            $table->foreign('media_file_id', 'fk_document_media_media_files_media_file_id')
-                  ->references('id')->on('media_files')->onDelete('cascade');
         });
     }
 

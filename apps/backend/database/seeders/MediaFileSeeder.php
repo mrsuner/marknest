@@ -45,15 +45,18 @@ class MediaFileSeeder extends Seeder
                     $attachedMedia = $availableMedia->random(rand(1, min(3, $availableMedia->count())));
                     
                     foreach ($attachedMedia as $index => $mediaFile) {
-                        $document->mediaFiles()->attach($mediaFile->id, [
-                            'usage_context' => fake()->randomElement(['inline', 'attachment', 'cover', 'gallery']),
-                            'order' => $index + 1,
-                            'metadata' => json_encode([
-                                'position' => fake()->optional()->randomElement(['left', 'center', 'right']),
-                                'width' => fake()->optional()->numberBetween(100, 800),
-                                'alt_override' => fake()->optional()->sentence(),
-                            ]),
-                        ]);
+                        // Check if the media file is already attached to avoid duplicates
+                        if (!$document->mediaFiles()->where('media_file_id', $mediaFile->id)->exists()) {
+                            $document->mediaFiles()->attach($mediaFile->id, [
+                                'usage_context' => fake()->randomElement(['inline', 'attachment', 'cover', 'gallery']),
+                                'order' => $index + 1,
+                                'metadata' => json_encode([
+                                    'position' => fake()->optional()->randomElement(['left', 'center', 'right']),
+                                    'width' => fake()->optional()->numberBetween(100, 800),
+                                    'alt_override' => fake()->optional()->sentence(),
+                                ]),
+                            ]);
+                        }
                     }
                 }
             }
@@ -66,13 +69,17 @@ class MediaFileSeeder extends Seeder
         $randomDocuments->each(function ($document) use ($popularMedia) {
             if (rand(1, 100) <= 30) { // 30% chance
                 $sharedMedia = $popularMedia->random(1);
-                $document->mediaFiles()->syncWithoutDetaching([
-                    $sharedMedia->first()->id => [
-                        'usage_context' => 'inline',
-                        'order' => $document->mediaFiles()->count() + 1,
-                        'metadata' => json_encode(['reused' => true]),
-                    ]
-                ]);
+                if ($sharedMedia->isNotEmpty()) {
+                    $mediaFile = $sharedMedia->first();
+                    // Check if this media file is already attached
+                    if (!$document->mediaFiles()->where('media_file_id', $mediaFile->id)->exists()) {
+                        $document->mediaFiles()->attach($mediaFile->id, [
+                            'usage_context' => 'inline',
+                            'order' => $document->mediaFiles()->count() + 1,
+                            'metadata' => json_encode(['reused' => true]),
+                        ]);
+                    }
+                }
             }
         });
 

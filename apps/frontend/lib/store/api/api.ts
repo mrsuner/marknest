@@ -39,6 +39,8 @@ export interface Document {
   rendered_html?: string
   user_id: string
   folder_id: string | null
+  folder_name?: string
+  folder_path?: string
   size: number
   word_count: number
   character_count: number

@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('document_shares', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('document_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('document_id')->constrained()->onDelete('cascade');
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
             $table->string('share_token', 64)->unique();
             $table->string('short_url', 20)->unique()->nullable(); // Short URL identifier
             $table->string('password')->nullable(); // Hashed password for protection
@@ -39,12 +39,6 @@ return new class extends Migration
             $table->index('expires_at', 'idx_document_shares_expires_at');
             $table->index('is_active', 'idx_document_shares_is_active');
             $table->index(['document_id', 'is_active'], 'idx_document_shares_doc_active');
-            
-            // Foreign keys with custom names
-            $table->foreign('document_id', 'fk_document_shares_documents_document_id')
-                  ->references('id')->on('documents')->onDelete('cascade');
-            $table->foreign('user_id', 'fk_document_shares_users_user_id')
-                  ->references('id')->on('users')->onDelete('cascade');
         });
     }
 

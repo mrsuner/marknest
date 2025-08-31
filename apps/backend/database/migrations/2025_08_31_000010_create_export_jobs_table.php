@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('export_jobs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('document_id')->nullable()->constrained()->onDelete('cascade');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
+            $table->foreignUlid('document_id')->nullable()->constrained()->onDelete('cascade');
             $table->string('job_id', 36)->unique(); // UUID
             $table->string('format', 20); // pdf, docx, html, epub, latex
             $table->string('status', 20)->default('pending'); // pending, processing, completed, failed
@@ -37,11 +37,6 @@ return new class extends Migration
             $table->index('created_at', 'idx_export_jobs_created_at');
             $table->index(['user_id', 'status'], 'idx_export_jobs_user_status');
             
-            // Foreign keys with custom names
-            $table->foreign('user_id', 'fk_export_jobs_users_user_id')
-                  ->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('document_id', 'fk_export_jobs_documents_document_id')
-                  ->references('id')->on('documents')->onDelete('cascade');
         });
     }
 

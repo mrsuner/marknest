@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('documents', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->string('title');
             $table->string('slug');
             $table->longText('content')->nullable();
             $table->longText('rendered_html')->nullable(); // Cached rendered HTML
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('folder_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
+            $table->foreignUlid('folder_id')->nullable()->constrained()->onDelete('set null');
             $table->integer('size')->default(0); // File size in bytes
             $table->integer('word_count')->default(0);
             $table->integer('character_count')->default(0);
@@ -47,12 +47,6 @@ return new class extends Migration
             $table->index('last_accessed_at', 'idx_documents_last_accessed_at');
             $table->index(['user_id', 'folder_id'], 'idx_documents_user_folder');
             $table->unique(['user_id', 'folder_id', 'slug'], 'unq_documents_user_folder_slug');
-            
-            // Foreign keys with custom names
-            $table->foreign('user_id', 'fk_documents_users_user_id')
-                  ->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('folder_id', 'fk_documents_folders_folder_id')
-                  ->references('id')->on('folders')->onDelete('set null');
         });
     }
 

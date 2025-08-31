@@ -20,7 +20,7 @@ class FolderFactory extends Factory
     public function definition(): array
     {
         $name = fake()->words(rand(1, 3), true);
-        $slug = Str::slug($name);
+        $slug = Str::slug($name) . '-' . fake()->unique()->numberBetween(1, 9999);
         
         return [
             'name' => $name,
@@ -39,8 +39,9 @@ class FolderFactory extends Factory
     public function withParent(Folder $parent): static
     {
         return $this->state(function (array $attributes) use ($parent) {
-            $slug = Str::slug($attributes['name']);
+            $slug = Str::slug($attributes['name']) . '-' . fake()->unique()->numberBetween(1, 9999);
             return [
+                'slug' => $slug,
                 'parent_id' => $parent->id,
                 'user_id' => $parent->user_id,
                 'path' => $parent->path . '/' . $slug,

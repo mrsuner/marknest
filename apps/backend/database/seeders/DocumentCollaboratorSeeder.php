@@ -24,12 +24,16 @@ class DocumentCollaboratorSeeder extends Seeder
                 $collaborators = $otherUsers->random(rand(1, 3));
 
                 $collaborators->each(function ($collaborator) use ($document) {
-                    DocumentCollaborator::factory()->create([
-                        'document_id' => $document->id,
-                        'user_id' => $collaborator->id,
-                        'invited_by' => $document->user_id,
-                        'permission' => fake()->randomElement(['view', 'comment', 'edit']),
-                    ]);
+                    if (!DocumentCollaborator::where('document_id', $document->id)
+                                            ->where('user_id', $collaborator->id)
+                                            ->exists()) {
+                        DocumentCollaborator::factory()->create([
+                            'document_id' => $document->id,
+                            'user_id' => $collaborator->id,
+                            'invited_by' => $document->user_id,
+                            'permission' => fake()->randomElement(['view', 'comment', 'edit']),
+                        ]);
+                    }
                 });
             }
         });
@@ -42,22 +46,30 @@ class DocumentCollaboratorSeeder extends Seeder
         if ($adminUser && $testUser) {
             $adminDocuments = $adminUser->documents()->limit(2)->get();
             $adminDocuments->each(function ($document) use ($testUser, $adminUser) {
-                DocumentCollaborator::factory()->editor()->create([
-                    'document_id' => $document->id,
-                    'user_id' => $testUser->id,
-                    'invited_by' => $adminUser->id,
-                ]);
+                if (!DocumentCollaborator::where('document_id', $document->id)
+                                        ->where('user_id', $testUser->id)
+                                        ->exists()) {
+                    DocumentCollaborator::factory()->editor()->create([
+                        'document_id' => $document->id,
+                        'user_id' => $testUser->id,
+                        'invited_by' => $adminUser->id,
+                    ]);
+                }
             });
         }
 
         if ($demoUser && $testUser) {
             $demoDocuments = $demoUser->documents()->limit(1)->get();
             $demoDocuments->each(function ($document) use ($testUser, $demoUser) {
-                DocumentCollaborator::factory()->viewer()->create([
-                    'document_id' => $document->id,
-                    'user_id' => $testUser->id,
-                    'invited_by' => $demoUser->id,
-                ]);
+                if (!DocumentCollaborator::where('document_id', $document->id)
+                                        ->where('user_id', $testUser->id)
+                                        ->exists()) {
+                    DocumentCollaborator::factory()->viewer()->create([
+                        'document_id' => $document->id,
+                        'user_id' => $testUser->id,
+                        'invited_by' => $demoUser->id,
+                    ]);
+                }
             });
         }
     }

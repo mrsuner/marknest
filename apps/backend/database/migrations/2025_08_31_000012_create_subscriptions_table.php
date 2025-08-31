@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('subscriptions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
             $table->string('stripe_subscription_id')->unique()->nullable();
             $table->string('stripe_customer_id')->nullable();
             $table->string('stripe_price_id')->nullable();
@@ -43,9 +43,6 @@ return new class extends Migration
             $table->index(['user_id', 'status'], 'idx_subscriptions_user_status');
             $table->unique('user_id', 'unq_subscriptions_user_id');
             
-            // Foreign keys with custom names
-            $table->foreign('user_id', 'fk_subscriptions_users_user_id')
-                  ->references('id')->on('users')->onDelete('cascade');
         });
     }
 

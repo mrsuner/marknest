@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_activities', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
             $table->string('activity_type', 50); // login, document_create, document_update, etc.
             $table->string('entity_type', 50)->nullable(); // document, folder, share
-            $table->unsignedBigInteger('entity_id')->nullable();
+            $table->string('entity_id', 26)->nullable(); // ULID support
             $table->string('description');
             $table->json('metadata')->nullable(); // Additional activity data
             $table->string('ip_address', 45)->nullable();
@@ -32,9 +32,6 @@ return new class extends Migration
             $table->index(['user_id', 'created_at'], 'idx_user_activities_user_created');
             $table->index(['entity_type', 'entity_id'], 'idx_user_activities_entity');
             
-            // Foreign keys with custom names
-            $table->foreign('user_id', 'fk_user_activities_users_user_id')
-                  ->references('id')->on('users')->onDelete('cascade');
         });
     }
 

@@ -1,138 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useGetRecentQuery } from '@/lib/store/api/documentsApi';
+import { Document } from '@/lib/store/api/api';
 
-interface Document {
-  id: number;
-  title: string;
-  content: string;
-  updated_at: string;
-  folder_name?: string;
-  word_count: number;
-}
 
-const mockRecentDocuments: Document[] = [
-  {
-    id: 1,
-    title: 'Project Proposal Draft',
-    content: 'This is a comprehensive project proposal for the new markdown editor platform...',
-    updated_at: '2025-08-31T10:30:00Z',
-    folder_name: 'Work Projects',
-    word_count: 1245,
-  },
-  {
-    id: 2,
-    title: 'Meeting Notes - Q4 Planning',
-    content: 'Key discussion points from today\'s quarterly planning meeting...',
-    updated_at: '2025-08-30T16:45:00Z',
-    folder_name: 'Meeting Notes',
-    word_count: 623,
-  },
-  {
-    id: 3,
-    title: 'Feature Specifications',
-    content: 'Detailed specifications for the upcoming features including user authentication...',
-    updated_at: '2025-08-30T14:20:00Z',
-    word_count: 892,
-  },
-  {
-    id: 4,
-    title: 'User Guide Documentation',
-    content: 'Complete user guide for the markdown editor with screenshots and examples...',
-    updated_at: '2025-08-29T11:15:00Z',
-    folder_name: 'Documentation',
-    word_count: 2156,
-  },
-  {
-    id: 5,
-    title: 'API Design Document',
-    content: 'REST API endpoints documentation with request/response examples...',
-    updated_at: '2025-08-28T09:30:00Z',
-    folder_name: 'Technical Docs',
-    word_count: 1534,
-  },
-  {
-    id: 6,
-    title: 'Database Schema Design',
-    content: 'Entity relationship diagrams and table structures for the application database...',
-    updated_at: '2025-08-27T15:22:00Z',
-    folder_name: 'Technical Docs',
-    word_count: 967,
-  },
-  {
-    id: 7,
-    title: 'Marketing Campaign Brief',
-    content: 'Campaign strategy and creative brief for Q1 2025 product launch...',
-    updated_at: '2025-08-26T13:18:00Z',
-    folder_name: 'Marketing',
-    word_count: 1823,
-  },
-  {
-    id: 8,
-    title: 'Team Onboarding Guide',
-    content: 'Step-by-step guide for new team members including tools and processes...',
-    updated_at: '2025-08-25T09:45:00Z',
-    folder_name: 'HR',
-    word_count: 2341,
-  },
-  {
-    id: 9,
-    title: 'Security Audit Report',
-    content: 'Comprehensive security assessment findings and recommendations...',
-    updated_at: '2025-08-24T16:30:00Z',
-    folder_name: 'Security',
-    word_count: 3456,
-  },
-  {
-    id: 10,
-    title: 'User Research Findings',
-    content: 'Analysis of user interviews and usability testing sessions...',
-    updated_at: '2025-08-23T11:12:00Z',
-    folder_name: 'Research',
-    word_count: 2789,
-  },
-  {
-    id: 11,
-    title: 'Performance Optimization Plan',
-    content: 'Strategies for improving application performance and scalability...',
-    updated_at: '2025-08-22T14:55:00Z',
-    folder_name: 'Technical Docs',
-    word_count: 1876,
-  },
-  {
-    id: 12,
-    title: 'Content Style Guide',
-    content: 'Brand voice, tone, and writing guidelines for all marketing materials...',
-    updated_at: '2025-08-21T10:33:00Z',
-    folder_name: 'Marketing',
-    word_count: 1234,
-  },
-  {
-    id: 13,
-    title: 'Budget Allocation Q4',
-    content: 'Detailed budget breakdown for Q4 expenses and resource allocation...',
-    updated_at: '2025-08-20T12:40:00Z',
-    folder_name: 'Finance',
-    word_count: 892,
-  },
-  {
-    id: 14,
-    title: 'Client Requirements Document',
-    content: 'Detailed requirements gathered from client stakeholders...',
-    updated_at: '2025-08-19T08:15:00Z',
-    folder_name: 'Projects',
-    word_count: 2456,
-  },
-  {
-    id: 15,
-    title: 'Testing Strategy Document',
-    content: 'Comprehensive testing approach including unit, integration, and e2e tests...',
-    updated_at: '2025-08-18T17:22:00Z',
-    folder_name: 'QA',
-    word_count: 1654,
-  },
-];
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -154,34 +27,28 @@ function truncateContent(content: string, maxLength: number = 150) {
 
 export default function RecentDocumentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'updated' | 'title' | 'words'>('updated');
+  const [sortBy, setSortBy] = useState<'updated_at' | 'title' | 'word_count' | 'created_at'>('updated_at');
   const [currentPage, setCurrentPage] = useState(1);
   const [documentsPerPage, setDocumentsPerPage] = useState(9);
 
-  const filteredDocuments = mockRecentDocuments
-    .filter(doc => 
-      doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.folder_name?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'title':
-          return a.title.localeCompare(b.title);
-        case 'words':
-          return b.word_count - a.word_count;
-        case 'updated':
-        default:
-          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-      }
-    });
+  // API query parameters
+  const queryParams = useMemo(() => ({
+    page: currentPage,
+    per_page: documentsPerPage,
+    search: searchQuery || undefined,
+    sort_by: sortBy,
+    sort_direction: 'desc' as const,
+  }), [currentPage, documentsPerPage, searchQuery, sortBy]);
 
-  // Pagination calculations
-  const totalDocuments = filteredDocuments.length;
-  const totalPages = Math.ceil(totalDocuments / documentsPerPage);
-  const startIndex = (currentPage - 1) * documentsPerPage;
-  const endIndex = startIndex + documentsPerPage;
-  const currentDocuments = filteredDocuments.slice(startIndex, endIndex);
+  const {
+    data: response,
+    error,
+    isLoading,
+    isFetching,
+  } = useGetRecentQuery(queryParams);
+
+  const documents = response?.data || [];
+  const meta = response?.meta;
 
   // Reset to first page when search or sort changes
   const handleSearchChange = (value: string) => {
@@ -189,10 +56,55 @@ export default function RecentDocumentsPage() {
     setCurrentPage(1);
   };
 
-  const handleSortChange = (value: 'updated' | 'title' | 'words') => {
+  const handleSortChange = (value: 'updated_at' | 'title' | 'word_count' | 'created_at') => {
     setSortBy(value);
     setCurrentPage(1);
   };
+
+  // Loading and error states
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-base-content">Recent Documents</h1>
+            <p className="text-base-content/60 mt-1">Loading...</p>
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="card bg-base-100 border border-base-300 animate-pulse">
+              <div className="card-body p-4">
+                <div className="h-4 bg-base-300 rounded mb-2"></div>
+                <div className="h-3 bg-base-300 rounded mb-4"></div>
+                <div className="h-3 bg-base-300 rounded mb-4"></div>
+                <div className="flex justify-between">
+                  <div className="h-3 bg-base-300 rounded w-20"></div>
+                  <div className="h-3 bg-base-300 rounded w-16"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="text-center py-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-error/10 rounded-full mb-4">
+            <svg className="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-base-content mb-2">Failed to load documents</h3>
+          <p className="text-base-content/60">Please try refreshing the page.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -201,13 +113,17 @@ export default function RecentDocumentsPage() {
         <div>
           <h1 className="text-3xl font-bold text-base-content">Recent Documents</h1>
           <p className="text-base-content/60 mt-1">
-            {totalDocuments > 0 ? (
+            {meta && meta.total > 0 ? (
               <>
-                Showing {startIndex + 1}-{Math.min(endIndex, totalDocuments)} of {totalDocuments} documents
+                Showing {meta.from || 1}-{meta.to || 0} of {meta.total} documents
                 {searchQuery && ` matching "${searchQuery}"`}
+                {isFetching && <span className="loading loading-spinner loading-xs ml-2"></span>}
               </>
             ) : (
-              `${mockRecentDocuments.length} total documents`
+              <>
+                {meta?.total === 0 && searchQuery ? 'No documents found' : 'No documents yet'}
+                {isFetching && <span className="loading loading-spinner loading-xs ml-2"></span>}
+              </>
             )}
           </p>
         </div>
@@ -242,17 +158,18 @@ export default function RecentDocumentsPage() {
         
         <select 
           value={sortBy} 
-          onChange={(e) => handleSortChange(e.target.value as 'updated' | 'title' | 'words')}
+          onChange={(e) => handleSortChange(e.target.value as 'updated_at' | 'title' | 'word_count' | 'created_at')}
           className="select select-bordered w-full sm:w-auto"
         >
-          <option value="updated">Sort by Updated</option>
+          <option value="updated_at">Sort by Updated</option>
           <option value="title">Sort by Title</option>
-          <option value="words">Sort by Word Count</option>
+          <option value="word_count">Sort by Word Count</option>
+          <option value="created_at">Sort by Created</option>
         </select>
       </div>
 
       {/* Documents Grid */}
-      {currentDocuments.length === 0 ? (
+      {documents.length === 0 ? (
         <div className="text-center py-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-base-200 rounded-full mb-4">
             <svg className="w-8 h-8 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,7 +183,7 @@ export default function RecentDocumentsPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {currentDocuments.map((document) => (
+          {documents.map((document) => (
             <Link
               key={document.id}
               href={`/documents/${document.id}/edit`}
@@ -323,7 +240,7 @@ export default function RecentDocumentsPage() {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {meta && meta.last_page > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-base-300">
           <div className="flex items-center gap-2">
             <span className="text-sm text-base-content/60">Items per page:</span>
@@ -345,7 +262,7 @@ export default function RecentDocumentsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage(1)}
-              disabled={currentPage === 1}
+              disabled={!meta || currentPage === 1}
               className="btn btn-sm btn-ghost disabled:opacity-50"
               aria-label="First page"
             >
@@ -356,7 +273,7 @@ export default function RecentDocumentsPage() {
             
             <button
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
+              disabled={!meta || currentPage === 1}
               className="btn btn-sm btn-ghost disabled:opacity-50"
               aria-label="Previous page"
             >
@@ -366,10 +283,10 @@ export default function RecentDocumentsPage() {
             </button>
 
             <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
+              {meta && Array.from({ length: meta.last_page }, (_, i) => i + 1)
                 .filter(page => {
                   const distance = Math.abs(page - currentPage);
-                  return distance === 0 || distance === 1 || page === 1 || page === totalPages;
+                  return distance === 0 || distance === 1 || page === 1 || page === meta.last_page;
                 })
                 .map((page, index, filteredPages) => (
                   <div key={page} className="flex items-center">
@@ -392,8 +309,8 @@ export default function RecentDocumentsPage() {
             </div>
 
             <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, meta?.last_page || 1))}
+              disabled={!meta || currentPage === meta.last_page}
               className="btn btn-sm btn-ghost disabled:opacity-50"
               aria-label="Next page"
             >
@@ -403,8 +320,8 @@ export default function RecentDocumentsPage() {
             </button>
             
             <button
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(meta?.last_page || 1)}
+              disabled={!meta || currentPage === meta.last_page}
               className="btn btn-sm btn-ghost disabled:opacity-50"
               aria-label="Last page"
             >

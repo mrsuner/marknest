@@ -14,19 +14,6 @@ use Illuminate\Validation\ValidationException;
 
 class DocumentController extends Controller
 {
-    // Basic CRUD operations
-
-    /**
-     * Get paginated list of user documents
-     * Supports filtering by folder, status (draft/published), favorites, archived
-     * Includes sorting by name, created_at, updated_at, last_accessed_at
-     * Returns document metadata without full content for performance
-     */
-    public function index(Request $request): JsonResponse
-    {
-        // Implementation pending
-    }
-
     /**
      * Create new document
      * Creates document with title, content, folder assignment
@@ -264,314 +251,7 @@ class DocumentController extends Controller
         ]);
     }
 
-    /**
-     * Delete document (soft delete to trash)
-     * Marks document as trashed, preserves data for recovery
-     * Updates user storage quota, logs deletion activity
-     * Returns success confirmation
-     */
-    public function destroy(string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    // Document Actions
-
-    /**
-     * Create duplicate copy of document
-     * Copies content, metadata, and media attachments
-     * Creates new document with "(Copy)" suffix, resets sharing
-     * Returns new document data
-     */
-    public function duplicate(string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Toggle document favorite status
-     * Adds/removes from favorites list for quick access
-     * Updates is_favorite boolean, logs activity
-     * Returns updated document status
-     */
-    public function toggleFavorite(string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Toggle document archive status
-     * Moves document to/from archive for organization
-     * Updates is_archived boolean, removes from main document list
-     * Returns updated document status
-     */
-    public function toggleArchive(string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Restore document from trash
-     * Unmarks trashed status, restores to original folder
-     * Updates user storage quota, logs restoration activity
-     * Returns restored document data
-     */
-    public function restore(string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Move document to different folder
-     * Updates folder_id, validates destination folder ownership
-     * Updates document path, logs move activity
-     * Returns updated document with new folder info
-     */
-    public function move(Request $request, string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Get document statistics
-     * Returns word count, character count, reading time estimate
-     * Includes view count, last accessed, collaboration stats
-     * Version count and size metrics
-     */
-    public function getStats(string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    // Version History Management
-
-    /**
-     * Get document version history
-     * Returns paginated list of all document versions
-     * Includes version metadata, change summaries, timestamps
-     * Excludes full content for performance (use getVersion for content)
-     */
-    public function getVersions(string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Get specific version content
-     * Returns complete version data including full content
-     * Used for version preview and comparison
-     * Validates version exists and user has access
-     */
-    public function getVersion(string $document, string $version): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Create manual version snapshot
-     * Creates new version entry with optional change description
-     * Useful for saving milestones before major edits
-     * Returns new version data
-     */
-    public function createVersion(Request $request, string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Restore document to specific version
-     * Copies version content to current document, creates new version entry
-     * Updates version number, logs restoration activity
-     * Returns updated document with restored content
-     */
-    public function restoreVersion(string $document, string $version): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Get differences between two versions
-     * Compares content changes between current and specified version
-     * Returns diff data with additions/deletions highlighted
-     * Supports side-by-side and unified diff formats
-     */
-    public function getVersionDiff(string $document, string $version): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    // Collaboration Management
-
-    /**
-     * Get document collaborators
-     * Returns list of users with access to document
-     * Includes permission levels, invitation status, last activity
-     * Shows pending invitations and access history
-     */
-    public function getCollaborators(string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Add collaborator to document
-     * Invites user by email, sets permission level (view/comment/edit)
-     * Sends invitation email, logs collaboration activity
-     * Returns updated collaborator list
-     */
-    public function addCollaborator(Request $request, string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Update collaborator permissions
-     * Changes permission level, updates access rights
-     * Validates permission hierarchy, logs permission changes
-     * Returns updated collaborator data
-     */
-    public function updateCollaborator(Request $request, string $document, string $collaborator): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Remove collaborator access
-     * Revokes document access, removes from collaborator list
-     * Sends notification email, logs access removal
-     * Returns success confirmation
-     */
-    public function removeCollaborator(string $document, string $collaborator): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    // Public Sharing Management
-
-    /**
-     * Get document sharing links
-     * Returns list of active public sharing links
-     * Includes share settings, access statistics, expiration status
-     * Shows password protection and view limits
-     */
-    public function getShares(string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Create public sharing link
-     * Generates secure sharing token, applies access restrictions
-     * Sets expiration, password protection, view limits as needed
-     * Returns sharing link and configuration
-     */
-    public function createShare(Request $request, string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Update sharing link settings
-     * Modifies expiration, password, view limits, permissions
-     * Can disable/enable existing links without changing URL
-     * Returns updated sharing configuration
-     */
-    public function updateShare(Request $request, string $document, string $share): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Delete sharing link
-     * Permanently removes public access link
-     * Logs deletion activity, notifies if link was actively used
-     * Returns success confirmation
-     */
-    public function deleteShare(string $document, string $share): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Get sharing link statistics
-     * Returns view count, access history, geographic data
-     * Shows referrer information and access patterns
-     * Includes download counts and time-based analytics
-     */
-    public function getShareStats(string $document, string $share): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    // Media File Management
-
-    /**
-     * Get document media attachments
-     * Returns list of files attached to document
-     * Includes usage context (inline/attachment/cover), order, metadata
-     * Shows file details and attachment settings
-     */
-    public function getMedia(string $document): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Attach media file to document
-     * Creates document-media relationship with usage context
-     * Sets attachment order, position, and display settings
-     * Returns updated media list for document
-     */
-    public function attachMedia(Request $request, string $document, string $mediaFile): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Update media attachment settings
-     * Modifies usage context, order, alt text, display settings
-     * Updates attachment metadata without changing file
-     * Returns updated attachment configuration
-     */
-    public function updateMediaAttachment(Request $request, string $document, string $mediaFile): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Remove media from document
-     * Removes document-media relationship (keeps original file)
-     * Updates attachment order for remaining media
-     * Returns updated media list
-     */
-    public function detachMedia(string $document, string $mediaFile): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    // Document Collections (Special Views)
-
-    /**
-     * Get user's favorite documents
-     * Returns documents marked as favorites across all folders
-     * Supports pagination and sorting options
-     * Used for quick access sidebar
-     */
-    public function getFavorites(Request $request): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Get archived documents
-     * Returns documents marked as archived
-     * Hidden from main interface but accessible for retrieval
-     * Supports search and filtering
-     */
-    public function getArchived(Request $request): JsonResponse
-    {
-        // Implementation pending
-    }
+   
 
     /**
      * Get recently accessed documents
@@ -581,87 +261,81 @@ class DocumentController extends Controller
      */
     public function getRecent(Request $request): JsonResponse
     {
-        // Implementation pending
+        $user = Auth::user();
+        
+        $validated = $request->validate([
+            'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'search' => 'sometimes|string|max:255',
+            'sort_by' => 'sometimes|in:updated_at,title,word_count,created_at',
+            'sort_direction' => 'sometimes|in:asc,desc'
+        ]);
+        
+        $perPage = $validated['per_page'] ?? 9;
+        $search = $validated['search'] ?? null;
+        $sortBy = $validated['sort_by'] ?? 'updated_at';
+        $sortDirection = $validated['sort_direction'] ?? 'desc';
+        
+        $query = Document::where('user_id', $user->id)
+            ->where('is_trashed', false)
+            ->where('is_archived', false)
+            ->with('folder:id,name,path');
+        
+        // Apply search filter if provided
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('content', 'like', "%{$search}%");
+            });
+        }
+        
+        // Apply sorting
+        $query->orderBy($sortBy, $sortDirection);
+        
+        // If not sorting by updated_at, add it as secondary sort
+        if ($sortBy !== 'updated_at') {
+            $query->orderBy('updated_at', 'desc');
+        }
+        
+        $documents = $query->paginate($perPage);
+        
+        return response()->json([
+            'data' => $documents->map(function ($doc) {
+                return [
+                    'id' => $doc->id,
+                    'title' => $doc->title,
+                    'content' => $doc->content,
+                    'slug' => $doc->slug,
+                    'folder_id' => $doc->folder_id,
+                    'folder_name' => $doc->folder?->name,
+                    'folder_path' => $doc->folder?->path,
+                    'word_count' => $doc->word_count,
+                    'character_count' => $doc->character_count,
+                    'size' => $doc->size,
+                    'version_number' => $doc->version_number,
+                    'is_favorite' => $doc->is_favorite,
+                    'tags' => $doc->tags,
+                    'status' => $doc->status,
+                    'created_at' => $doc->created_at,
+                    'updated_at' => $doc->updated_at,
+                    'last_accessed_at' => $doc->last_accessed_at
+                ];
+            }),
+            'meta' => [
+                'current_page' => $documents->currentPage(),
+                'last_page' => $documents->lastPage(),
+                'per_page' => $documents->perPage(),
+                'total' => $documents->total(),
+                'from' => $documents->firstItem(),
+                'to' => $documents->lastItem()
+            ],
+            'links' => [
+                'first' => $documents->url(1),
+                'last' => $documents->url($documents->lastPage()),
+                'prev' => $documents->previousPageUrl(),
+                'next' => $documents->nextPageUrl()
+            ]
+        ]);
     }
 
-    /**
-     * Get trashed documents
-     * Returns soft-deleted documents available for recovery
-     * Includes deletion timestamp and recovery deadline
-     * Supports permanent deletion after retention period
-     */
-    public function getTrashed(Request $request): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Get documents shared with current user
-     * Returns documents where user is collaborator (not owner)
-     * Shows permission level and collaboration activity
-     * Grouped by sharing user for organization
-     */
-    public function getSharedWithMe(Request $request): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Get documents shared by current user
-     * Returns documents where user has created sharing links
-     * Shows sharing statistics and active collaborations
-     * Includes public sharing and private collaboration
-     */
-    public function getMyShares(Request $request): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    // Search and Discovery
-
-    /**
-     * Global search across documents and content
-     * Full-text search through document titles and content
-     * Supports advanced filters (date range, folder, tags)
-     * Returns ranked results with content snippets
-     */
-    public function globalSearch(Request $request): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    // Public Access (no authentication)
-
-    /**
-     * Get public document via sharing token
-     * Validates sharing token, checks expiration and limits
-     * Records access statistics, enforces view restrictions
-     * Returns document content with sharing constraints applied
-     */
-    public function getPublicDocument(string $token): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Record public document view
-     * Logs view event for analytics, updates view counter
-     * Tracks referrer and geographic data
-     * Enforces view limits if configured
-     */
-    public function recordPublicView(Request $request, string $token): JsonResponse
-    {
-        // Implementation pending
-    }
-
-    /**
-     * Download public document
-     * Validates download permissions, generates export
-     * Records download event, applies watermarks if enabled
-     * Returns file stream or download URL
-     */
-    public function downloadPublicDocument(Request $request, string $token): JsonResponse
-    {
-        // Implementation pending
-    }
 }
