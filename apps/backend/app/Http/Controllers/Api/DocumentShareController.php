@@ -296,7 +296,7 @@ class DocumentShareController extends Controller
     public function findActiveShareByDocument(string $documentId): JsonResponse
     {
         $share = DocumentShare::where('document_id', $documentId)
-            ->where('access_level', 'public')
+            ->whereIn('access_level', ['public', 'read']) // Support both public and read access levels
             ->active()
             ->notExpired()
             ->first();
