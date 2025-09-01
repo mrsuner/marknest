@@ -179,7 +179,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
               </Link>
               
               <Link
-                href="/documents"
+                href="/dashboard/documents"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-base-200 text-base-content transition-colors duration-200"
                 onClick={() => setIsSidebarOpen(false)}
               >
@@ -190,7 +190,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
               </Link>
               
               <Link
-                href="/folders"
+                href="/dashboard/folders"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-base-200 text-base-content transition-colors duration-200"
                 onClick={() => setIsSidebarOpen(false)}
               >
@@ -201,7 +201,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
               </Link>
               
               <Link
-                href="/shared"
+                href="/dashboard/shared"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-base-200 text-base-content transition-colors duration-200"
                 onClick={() => setIsSidebarOpen(false)}
               >

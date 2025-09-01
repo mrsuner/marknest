@@ -130,7 +130,7 @@ export default function RecentDocumentsPage() {
         
         <div className="flex items-center gap-3">
           <Link
-            href="/documents/new"
+            href="/dashboard/documents/new"
             className="btn btn-primary btn-sm sm:btn-md"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

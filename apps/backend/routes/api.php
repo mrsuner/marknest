@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DocumentController;
+use App\Http\Controllers\Api\DocumentShareController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\UserPreferenceController;
@@ -42,39 +43,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('{document}', [DocumentController::class, 'update']);
         Route::delete('{document}', [DocumentController::class, 'destroy']);
         
-        // Document actions
-        Route::post('{document}/duplicate', [DocumentController::class, 'duplicate']);
-        Route::post('{document}/favorite', [DocumentController::class, 'toggleFavorite']);
-        Route::post('{document}/archive', [DocumentController::class, 'toggleArchive']);
-        Route::post('{document}/restore', [DocumentController::class, 'restore']);
-        Route::post('{document}/move', [DocumentController::class, 'move']);
-        Route::get('{document}/stats', [DocumentController::class, 'getStats']);
-        
-        // Version history
-        Route::get('{document}/versions', [DocumentController::class, 'getVersions']);
-        Route::get('{document}/versions/{version}', [DocumentController::class, 'getVersion']);
-        Route::post('{document}/versions', [DocumentController::class, 'createVersion']);
-        Route::post('{document}/versions/{version}/restore', [DocumentController::class, 'restoreVersion']);
-        Route::get('{document}/versions/{version}/diff', [DocumentController::class, 'getVersionDiff']);
-        
-        // Collaboration
-        Route::get('{document}/collaborators', [DocumentController::class, 'getCollaborators']);
-        Route::post('{document}/collaborators', [DocumentController::class, 'addCollaborator']);
-        Route::put('{document}/collaborators/{collaborator}', [DocumentController::class, 'updateCollaborator']);
-        Route::delete('{document}/collaborators/{collaborator}', [DocumentController::class, 'removeCollaborator']);
-        
-        // Sharing
-        Route::get('{document}/shares', [DocumentController::class, 'getShares']);
-        Route::post('{document}/shares', [DocumentController::class, 'createShare']);
-        Route::put('{document}/shares/{share}', [DocumentController::class, 'updateShare']);
-        Route::delete('{document}/shares/{share}', [DocumentController::class, 'deleteShare']);
-        Route::get('{document}/shares/{share}/stats', [DocumentController::class, 'getShareStats']);
         
         // Media attachments
         Route::get('{document}/media', [DocumentController::class, 'getMedia']);
         Route::post('{document}/media/{mediaFile}', [DocumentController::class, 'attachMedia']);
         Route::put('{document}/media/{mediaFile}', [DocumentController::class, 'updateMediaAttachment']);
         Route::delete('{document}/media/{mediaFile}', [DocumentController::class, 'detachMedia']);
+    });
+
+    // Document sharing management
+    Route::prefix('document-shares')->group(function () {
+        Route::get('/', [DocumentShareController::class, 'index']);
+        Route::post('/', [DocumentShareController::class, 'store']);
+        Route::get('{share}', [DocumentShareController::class, 'show']);
+        Route::put('{share}', [DocumentShareController::class, 'update']);
+        Route::delete('{share}', [DocumentShareController::class, 'destroy']);
+        Route::patch('{share}/toggle', [DocumentShareController::class, 'toggle']);
+        Route::get('{share}/analytics', [DocumentShareController::class, 'analytics']);
+        Route::post('bulk-update', [DocumentShareController::class, 'bulkUpdate']);
     });
 
     // Folder management
@@ -121,3 +107,7 @@ Route::prefix('public')->group(function () {
     Route::post('share/{token}/view', [DocumentController::class, 'recordPublicView']);
     Route::post('share/{token}/download', [DocumentController::class, 'downloadPublicDocument']);
 });
+
+// Public routes for document shares
+Route::get('share/{shareToken}', [DocumentShareController::class, 'publicView']);
+Route::get('documents/{documentId}/active-share', [DocumentShareController::class, 'findActiveShareByDocument']);
