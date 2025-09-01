@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\UserPreferenceController;
+use App\Http\Controllers\SubscriptionController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/request-otp', [AuthController::class, 'requestOtp']);
@@ -109,6 +110,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Search across documents and folders
     Route::get('search', [DocumentController::class, 'globalSearch']);
+    
+    // Subscription management
+    Route::prefix('subscription')->group(function () {
+        Route::get('plans', [SubscriptionController::class, 'plans']);
+        Route::get('status', [SubscriptionController::class, 'status']);
+        Route::get('setup-intent', [SubscriptionController::class, 'setupIntent']);
+        Route::post('subscribe', [SubscriptionController::class, 'subscribe']);
+        Route::put('change-plan', [SubscriptionController::class, 'changePlan']);
+        Route::post('cancel', [SubscriptionController::class, 'cancel']);
+        Route::post('resume', [SubscriptionController::class, 'resume']);
+        
+        // Payment methods
+        Route::get('payment-methods', [SubscriptionController::class, 'paymentMethods']);
+        Route::post('payment-methods', [SubscriptionController::class, 'addPaymentMethod']);
+        Route::delete('payment-methods/{paymentMethodId}', [SubscriptionController::class, 'deletePaymentMethod']);
+        
+        // Invoices
+        Route::get('invoices', [SubscriptionController::class, 'invoices']);
+        Route::get('invoices/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice']);
+    });
 });
 
 // Public sharing routes (no authentication required)

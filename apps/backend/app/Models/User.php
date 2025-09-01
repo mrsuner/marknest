@@ -10,11 +10,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Laravel\Cashier\Billable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens, HasUlids;
+    use HasFactory, Notifiable, HasApiTokens, HasUlids, Billable;
 
     /**
      * The attributes that are mass assignable.
@@ -35,6 +36,10 @@ class User extends Authenticatable
         'version_history_days',
         'can_share_public',
         'can_password_protect',
+        'stripe_id',
+        'pm_type',
+        'pm_last_four',
+        'trial_ends_at',
     ];
 
     /**
@@ -66,6 +71,7 @@ class User extends Authenticatable
             'version_history_days' => 'integer',
             'can_share_public' => 'boolean',
             'can_password_protect' => 'boolean',
+            'trial_ends_at' => 'datetime',
         ];
     }
 
