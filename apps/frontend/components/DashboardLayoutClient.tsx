@@ -144,7 +144,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
                     </div>
                   </li>
                   <li className="sm:hidden"><hr className="my-1" /></li>
-                  <li><a href="#profile">Profile Settings</a></li>
+                  <li><Link href="/profile">Profile Settings</Link></li>
                   <li><Link href="/preferences">Preferences</Link></li>
                   <li><a href="#billing">Billing</a></li>
                   <li><hr className="my-1" /></li>

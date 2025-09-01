@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { env } from '@/lib/config/env';
+import StatsCard from '@/components/ui/StatsCard';
 
 interface UserStats {
   id: string;
@@ -25,11 +26,6 @@ const formatBytes = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-const getProgressColor = (percentage: number) => {
-  if (percentage >= 90) return 'progress-error';
-  if (percentage >= 70) return 'progress-warning';
-  return 'progress-primary';
-};
 
 export default function SettingsPage() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
@@ -99,66 +95,36 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Storage Usage */}
-            <div className="bg-base-100 border border-base-300 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-base-content">Storage Usage</h3>
-                  <p className="text-sm text-base-content/60">
-                    {userStats ? formatBytes(userStats.storage_used) : '0 Bytes'} of {userStats ? formatBytes(userStats.storage_limit) : '0 Bytes'} used
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <progress 
-                  className={`progress w-full ${getProgressColor(storagePercentage)}`} 
-                  value={storagePercentage} 
-                  max="100"
-                ></progress>
-                <div className="flex justify-between text-sm">
-                  <span className="text-base-content/60">{storagePercentage}% used</span>
-                  <span className={`font-medium ${storagePercentage >= 90 ? 'text-error' : storagePercentage >= 70 ? 'text-warning' : 'text-primary'}`}>
-                    {100 - storagePercentage}% remaining
-                  </span>
-                </div>
-              </div>
-            </div>
+            <StatsCard
+              title="Storage Usage"
+              subtitle={`${userStats ? formatBytes(userStats.storage_used) : '0 Bytes'} of ${userStats ? formatBytes(userStats.storage_limit) : '0 Bytes'} used`}
+              icon={
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+                </svg>
+              }
+              percentage={storagePercentage}
+              remaining={`${100 - storagePercentage}% remaining`}
+              showProgress={true}
+              iconBgColor="bg-primary/10"
+              iconTextColor="text-primary"
+            />
 
             {/* Document Count */}
-            <div className="bg-base-100 border border-base-300 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-secondary/10 rounded-lg">
-                  <svg className="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-base-content">Documents</h3>
-                  <p className="text-sm text-base-content/60">
-                    {userStats?.document_count || 0} of {userStats?.document_limit || 0} documents
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <progress 
-                  className={`progress w-full ${getProgressColor(documentsPercentage)}`} 
-                  value={documentsPercentage} 
-                  max="100"
-                ></progress>
-                <div className="flex justify-between text-sm">
-                  <span className="text-base-content/60">{documentsPercentage}% used</span>
-                  <span className={`font-medium ${documentsPercentage >= 90 ? 'text-error' : documentsPercentage >= 70 ? 'text-warning' : 'text-primary'}`}>
-                    {(userStats?.document_limit || 0) - (userStats?.document_count || 0)} remaining
-                  </span>
-                </div>
-              </div>
-            </div>
+            <StatsCard
+              title="Documents"
+              subtitle={`${userStats?.document_count || 0} of ${userStats?.document_limit || 0} documents`}
+              icon={
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              }
+              percentage={documentsPercentage}
+              remaining={`${(userStats?.document_limit || 0) - (userStats?.document_count || 0)} remaining`}
+              showProgress={true}
+              iconBgColor="bg-secondary/10"
+              iconTextColor="text-secondary"
+            />
           </div>
 
           {/* Additional Plan Features */}
@@ -240,7 +206,7 @@ export default function SettingsPage() {
                   <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>20MB assets storage</span>
+                  <span>100 photos or 20MB assets storage</span>
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -317,13 +283,13 @@ export default function SettingsPage() {
                   <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Public sharing links</span>
+                  <span>Public sharing link</span>
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Password protection</span>
+                  <span>Password protection for shared links</span>
                 </li>
               </ul>
               
@@ -372,13 +338,13 @@ export default function SettingsPage() {
                   <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Public sharing links</span>
+                  <span>Public sharing link</span>
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Password protection</span>
+                  <span>Password protection for shared links</span>
                 </li>
               </ul>
               
