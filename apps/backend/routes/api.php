@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentShareController;
 use App\Http\Controllers\Api\FolderController;
+use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\UserPreferenceController;
 
@@ -63,6 +64,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('bulk-update', [DocumentShareController::class, 'bulkUpdate']);
     });
 
+
+    Route::prefix('files')->group(function (){
+        Route::get('/', [FileController::class, 'index']);
+        Route::post('/', [FileController::class, 'store']);
+        Route::get('{file}', [FileController::class, 'show']);
+        Route::put('{file}', [FileController::class, 'update']);
+        Route::delete('{file}', [FileController::class, 'destroy']);
+        Route::get('{file}/download', [FileController::class, 'download']);
+    });
     // Folder management
     Route::prefix('folders')->group(function () {
         Route::get('/', [FolderController::class, 'index']);

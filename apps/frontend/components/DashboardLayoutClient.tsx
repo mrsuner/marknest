@@ -211,6 +211,17 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
               </Link>
               
               <Link
+                href="/dashboard/files"
+                className={getNavLinkClass('/dashboard/files')}
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                <span className="font-medium">Files</span>
+              </Link>
+              
+              <Link
                 href="/dashboard/shared"
                 className={getNavLinkClass('/dashboard/shared')}
                 onClick={() => setIsSidebarOpen(false)}
