@@ -19,6 +19,7 @@ class UserSeeder extends Seeder
             'plan' => 'enterprise',
             'storage_limit' => 53687091200, // 50GB
             'document_limit' => 10000,
+            'links_limit' => 1000,
             'version_history_days' => 365,
             'can_share_public' => true,
             'can_password_protect' => true,
@@ -31,6 +32,7 @@ class UserSeeder extends Seeder
             'plan' => 'pro',
             'storage_limit' => 5368709120, // 5GB
             'document_limit' => 1000,
+            'links_limit' => 100,
             'version_history_days' => 30,
             'can_share_public' => true,
             'can_password_protect' => true,

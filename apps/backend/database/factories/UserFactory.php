@@ -36,6 +36,8 @@ class UserFactory extends Factory
             'storage_limit' => $this->getStorageLimit($plan),
             'document_count' => fake()->numberBetween(0, 25),
             'document_limit' => $this->getDocumentLimit($plan),
+            'links_count' => fake()->numberBetween(0, 10),
+            'links_limit' => $this->getLinksLimit($plan),
             'version_history_days' => $this->getVersionHistoryDays($plan),
             'can_share_public' => $plan !== 'free',
             'can_password_protect' => $plan !== 'free',
@@ -57,6 +59,15 @@ class UserFactory extends Factory
             'free' => 10,
             'pro' => 1000,
             'enterprise' => 10000,
+        };
+    }
+
+    private function getLinksLimit(string $plan): int
+    {
+        return match ($plan) {
+            'free' => 5,
+            'pro' => 100,
+            'enterprise' => 1000,
         };
     }
 

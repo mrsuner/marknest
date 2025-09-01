@@ -20,10 +20,12 @@ class MeController extends Controller
             'email' => $user->email,
             'plan' => $user->plan ?? 'free',
             'storage_used' => $user->storage_used ?? 0,
-            'storage_limit' => $user->storage_limit ?? 20971520, // 20MB for free plan
+            'storage_limit' => $user->storage_limit ?? 104857600, // 100MB for free plan
             'document_count' => $user->document_count ?? 0,
-            'document_limit' => $user->document_limit ?? 100, // 100 docs for free plan
-            'version_history_days' => $user->version_history_days ?? 10,
+            'document_limit' => $user->document_limit ?? 10, // 10 docs for free plan
+            'links_count' => $user->links_count ?? 0,
+            'links_limit' => $user->links_limit ?? 5, // 5 links for free plan
+            'version_history_days' => $user->version_history_days ?? 7,
             'can_share_public' => $user->can_share_public ?? false,
             'can_password_protect' => $user->can_password_protect ?? false,
             'has_password' => !empty($user->password),

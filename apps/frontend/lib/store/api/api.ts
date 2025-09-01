@@ -118,11 +118,34 @@ export interface SearchResponse {
   message: string
 }
 
+export interface User {
+  id: string
+  name: string
+  email: string
+  plan: 'free' | 'pro' | 'enterprise'
+  storage_used: number
+  storage_limit: number
+  document_count: number
+  document_limit: number
+  links_count: number
+  links_limit: number
+  version_history_days: number
+  can_share_public: boolean
+  can_password_protect: boolean
+  has_password: boolean
+}
+
 export const api = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['Folder', 'Document', 'FolderContents'],
+  tagTypes: ['Folder', 'Document', 'FolderContents', 'User'],
   endpoints: (builder) => ({
+    // User endpoints
+    getMe: builder.query<User, void>({
+      query: () => 'me',
+      providesTags: ['User'],
+    }),
+
     // Folder endpoints
     getFolderTree: builder.query<{ data: Folder[]; message: string }, void>({
       query: () => 'folders',
@@ -196,6 +219,7 @@ export const api = createApi({
 })
 
 export const {
+  useGetMeQuery,
   useGetFolderTreeQuery,
   useGetFolderContentsQuery,
   useCreateFolderMutation,
