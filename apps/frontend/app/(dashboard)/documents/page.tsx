@@ -184,30 +184,18 @@ export default function RecentDocumentsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {documents.map((document) => (
-            <Link
+            <div
               key={document.id}
-              href={`/documents/${document.id}/edit`}
-              className="card bg-base-100 hover:bg-base-200 border border-base-300 hover:border-primary/20 transition-all duration-200 hover:shadow-lg"
+              className="card bg-base-100 hover:bg-base-200 border border-base-300 hover:border-primary/20 transition-all duration-200 hover:shadow-lg relative"
             >
-              <div className="card-body p-4">
+              <Link
+                href={`/documents/${document.id}/edit`}
+                className="card-body p-4 block"
+              >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <h3 className="font-semibold text-base-content line-clamp-2 flex-1">
                     {document.title}
                   </h3>
-                  <div className="dropdown dropdown-end">
-                    <div tabIndex={0} role="button" className="btn btn-ghost btn-xs btn-circle">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </div>
-                    <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-48 border border-base-300 z-10">
-                      <li><a href="#edit">Edit</a></li>
-                      <li><a href="#duplicate">Duplicate</a></li>
-                      <li><a href="#share">Share</a></li>
-                      <li><hr className="my-1" /></li>
-                      <li><a href="#delete" className="text-error">Delete</a></li>
-                    </ul>
-                  </div>
                 </div>
                 
                 <p className="text-sm text-base-content/70 mb-4 line-clamp-3">
@@ -233,8 +221,23 @@ export default function RecentDocumentsPage() {
                   </div>
                   <span>{formatDate(document.updated_at)}</span>
                 </div>
+              </Link>
+              
+              <div className="dropdown dropdown-end absolute top-4 right-4">
+                <div tabIndex={0} role="button" className="btn btn-ghost btn-xs btn-circle">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+                </div>
+                <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-48 border border-base-300 z-10">
+                  <li><button onClick={() => window.location.href = `/documents/${document.id}/edit`}>Edit</button></li>
+                  <li><button>Duplicate</button></li>
+                  <li><button>Share</button></li>
+                  <li><hr className="my-1" /></li>
+                  <li><button className="text-error">Delete</button></li>
+                </ul>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}
