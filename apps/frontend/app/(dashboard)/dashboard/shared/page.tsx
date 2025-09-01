@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { env } from '@/lib/config/env';
+import ShareModal from '@/components/modals/ShareModal';
 
 interface DocumentShare {
   id: string;
@@ -58,6 +59,8 @@ export default function SharedLinksPage() {
   const [editingShare, setEditingShare] = useState<DocumentShare | null>(null);
   const [editFormData, setEditFormData] = useState<EditShareFormData | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [showNewShareModal, setShowNewShareModal] = useState(false);
+  const [newShareDocumentName, setNewShareDocumentName] = useState('');
 
   const fetchShares = async (page = 1) => {
     try {
@@ -297,6 +300,14 @@ export default function SharedLinksPage() {
     });
   };
 
+  const handleNewShareCreated = async (shareData: any) => {
+    // Add the new share to the current shares list
+    setShares(prevShares => [shareData, ...prevShares]);
+    setShowNewShareModal(false);
+    setNewShareDocumentName('');
+    // TODO: Show success toast notification
+  };
+
   const handleBulkAction = async (action: 'activate' | 'deactivate' | 'delete') => {
     const shareIds = Array.from(selectedShares);
     if (shareIds.length === 0) return;
@@ -382,7 +393,13 @@ export default function SharedLinksPage() {
               </ul>
             </div>
           )}
-          <button className="btn btn-primary btn-sm">
+          <button 
+            className="btn btn-primary btn-sm"
+            onClick={() => {
+              setNewShareDocumentName('Sample Document'); // TODO: Replace with actual document selection
+              setShowNewShareModal(true);
+            }}
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -962,6 +979,20 @@ export default function SharedLinksPage() {
             <button type="button" onClick={closeEditModal}>close</button>
           </form>
         </div>
+      )}
+
+      {/* New Share Modal */}
+      {newShareDocumentName && (
+        <ShareModal
+          isOpen={showNewShareModal}
+          onClose={() => {
+            setShowNewShareModal(false);
+            setNewShareDocumentName('');
+          }}
+          documentId="sample_doc_id" // TODO: Replace with actual document ID
+          documentName={newShareDocumentName}
+          onShareCreated={handleNewShareCreated}
+        />
       )}
     </div>
   );

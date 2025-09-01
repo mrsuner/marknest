@@ -26,7 +26,7 @@ class DocumentController extends Controller
         
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'content' => 'sometimes|string',
+            'content' => 'nullable|string',
             'folder_id' => 'sometimes|nullable|exists:folders,id',
             'tags' => 'sometimes|array',
             'status' => 'sometimes|in:draft,published'
@@ -42,7 +42,7 @@ class DocumentController extends Controller
         $document = DB::transaction(function () use ($validated, $user, $content) {
             $doc = Document::create([
                 'title' => $validated['title'],
-                'slug' => Str::slug($validated['title']),
+                'slug' => '', // Will be set to ID after creation
                 'content' => $content,
                 'rendered_html' => $content, // TODO: Render markdown to HTML
                 'user_id' => $user->id,
@@ -55,6 +55,9 @@ class DocumentController extends Controller
                 'status' => $validated['status'] ?? 'draft',
                 'last_accessed_at' => now()
             ]);
+            
+            // Set slug to document ID
+            $doc->update(['slug' => $doc->id]);
             
             // Create initial version
             DocumentVersion::create([
@@ -200,7 +203,7 @@ class DocumentController extends Controller
             if (isset($validated['folder_id'])) {
                 // Validate folder belongs to user
                 if ($validated['folder_id']) {
-                    $folder = $user->folders()->findOrFail($validated['folder_id']);
+                    $user->folders()->findOrFail($validated['folder_id']);
                 }
                 $updateData['folder_id'] = $validated['folder_id'];
             }

@@ -29,6 +29,7 @@ import {
   closeDeleteConfirm,
 } from '@/lib/store/slices/uiSlice';
 import { useState } from 'react';
+import ShareModal from '@/components/modals/ShareModal';
 
 export default function DocumentsPage() {
   const router = useRouter();
@@ -50,6 +51,9 @@ export default function DocumentsPage() {
 
   // Local state
   const [newItemName, setNewItemName] = useState('');
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareDocumentId, setShareDocumentId] = useState<string | null>(null);
+  const [shareDocumentName, setShareDocumentName] = useState<string>('');
 
   // RTK Query hooks
   const {
@@ -214,6 +218,23 @@ export default function DocumentsPage() {
     dispatch(clearSearchQuery());
   };
 
+  const handleShareClick = () => {
+    if (selectedItems.length === 1) {
+      const selectedItem = items.find(item => item.id === selectedItems[0]);
+      if (selectedItem && selectedItem.type === 'document') {
+        setShareDocumentId(selectedItem.id);
+        setShareDocumentName(selectedItem.name);
+        setShareModalOpen(true);
+      }
+    }
+  };
+
+  const handleShareCreated = (shareData: any) => {
+    console.log('Share created:', shareData);
+    // TODO: Show success toast notification
+    // TODO: Navigate to shared links page or refresh data
+  };
+
   // Component icons
   const FolderIcon = () => (
     <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
@@ -355,7 +376,14 @@ export default function DocumentsPage() {
               {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected
             </span>
             <div className="flex gap-2">
-              <button className="btn btn-sm btn-ghost">
+              <button 
+                onClick={handleShareClick}
+                className="btn btn-sm btn-ghost"
+                disabled={selectedItems.length !== 1 || (selectedItems.length === 1 && items.find(item => item.id === selectedItems[0])?.type !== 'document')}
+                title={selectedItems.length !== 1 ? "Select exactly one document to share" : 
+                       items.find(item => item.id === selectedItems[0])?.type !== 'document' ? "Only documents can be shared" : 
+                       "Create share link"}
+              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326" />
                 </svg>
@@ -629,6 +657,21 @@ export default function DocumentsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Share Modal */}
+      {shareDocumentId && shareDocumentName && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setShareDocumentId(null);
+            setShareDocumentName('');
+          }}
+          documentId={shareDocumentId}
+          documentName={shareDocumentName}
+          onShareCreated={handleShareCreated}
+        />
       )}
     </div>
   );

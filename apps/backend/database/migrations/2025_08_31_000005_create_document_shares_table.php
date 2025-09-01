@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignUlid('document_id')->constrained()->onDelete('cascade');
             $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
             $table->string('share_token', 64)->unique();
-            $table->string('short_url', 20)->unique()->nullable(); // Short URL identifier
+            $table->string('short_url', 128)->unique()->nullable(); // Short URL identifier
             $table->string('password')->nullable(); // Hashed password for protection
             $table->timestamp('expires_at')->nullable();
             $table->integer('max_views')->nullable(); // Limit number of views

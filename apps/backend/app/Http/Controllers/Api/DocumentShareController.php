@@ -265,7 +265,7 @@ class DocumentShareController extends Controller
     private function generateShortUrl(string $token): string
     {
         // In production, you might want to use a proper URL shortener
-        return config('app.url') . '/s/' . $token;
+        return  '/s/' . $token;
     }
 
     private function logAccess(DocumentShare $share): void
