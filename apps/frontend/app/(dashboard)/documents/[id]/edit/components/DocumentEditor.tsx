@@ -318,79 +318,13 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
       <div className="bg-base-200 rounded-t-lg p-2 sm:p-4">
         {/* Mobile Layout */}
         <div className="sm:hidden space-y-2">
-          {/* Title input row */}
-          <input 
-            type="text" 
-            value={title} 
-            onChange={(e) => handleTitleChange(e.target.value)}
-            className="input input-ghost text-base font-semibold bg-transparent border-none focus:bg-base-100 w-full"
-            placeholder="Document title..."
-            aria-label="Document title"
-          />
-          
-          {/* Actions and stats row */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex gap-2">
-              <button
-                onClick={handleSave}
-                className={`btn btn-primary btn-sm ${isSaving ? 'loading' : ''}`}
-                disabled={isSaving}
-                aria-label="Save document"
-              >
-                {isSaving ? '' : 'Save'}
-              </button>
-              <button
-                onClick={handleLoad}
-                className="btn btn-outline btn-sm"
-                disabled={isLoading}
-                aria-label="Reload document"
-              >
-                Reload
-              </button>
-              <button
-                onClick={toggleFullscreen}
-                className="btn btn-ghost btn-sm"
-                title="Enter Fullscreen"
-                aria-label="Enter fullscreen mode"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
-                </svg>
-              </button>
-            </div>
-            <div className="text-xs text-base-content/50">
-              {document.word_count}w • v{document.version_number}
-            </div>
-          </div>
-          
-          {/* Status row - only show if there's content */}
-          {(lastSaved || error) && (
-            <div className="flex items-center justify-between text-xs">
-              {error && (
-                <div className="text-error flex items-center">
-                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  Error
-                </div>
-              )}
-              {lastSaved && (
-                <div className="text-base-content/50 ml-auto">
-                  Saved {lastSaved.toLocaleTimeString()}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Desktop Layout */}
-        <div className="hidden sm:flex justify-between items-center">
-          <div className="flex items-center gap-4 flex-1">
+          {/* Title and actions row */}
+          <div className="flex items-center gap-2">
             <input 
               type="text" 
               value={title} 
               onChange={(e) => handleTitleChange(e.target.value)}
-              className="input input-ghost text-lg font-semibold bg-transparent border-none focus:bg-base-100 w-full max-w-md lg:max-w-lg"
+              className="input input-ghost text-base font-semibold bg-transparent border-none focus:bg-base-100 flex-1"
               placeholder="Document title..."
               aria-label="Document title"
             />
@@ -423,6 +357,39 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
               </button>
             </div>
           </div>
+          
+          {/* Status row - only show if there's content */}
+          {(lastSaved || error) && (
+            <div className="flex items-center justify-between text-xs">
+              {error && (
+                <div className="text-error flex items-center">
+                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  Error
+                </div>
+              )}
+              {lastSaved && (
+                <div className="text-base-content/50 ml-auto">
+                  Saved {lastSaved.toLocaleTimeString()}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden sm:flex justify-between items-center">
+          <div className="flex-1">
+            <input 
+              type="text" 
+              value={title} 
+              onChange={(e) => handleTitleChange(e.target.value)}
+              className="input input-ghost text-lg font-semibold bg-transparent border-none focus:bg-base-100 w-full max-w-md lg:max-w-lg"
+              placeholder="Document title..."
+              aria-label="Document title"
+            />
+          </div>
           <div className="flex items-center gap-4">
             {error && (
               <div className="text-error text-sm">
@@ -432,11 +399,33 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
                 Error occurred
               </div>
             )}
-            <div className="text-xs text-base-content/50">
-              {document.word_count} words • v{document.version_number}
-              {lastSaved && (
-                <span className="ml-2">• Saved {lastSaved.toLocaleTimeString()}</span>
-              )}
+            <div className="flex gap-2">
+              <button
+                onClick={handleSave}
+                className={`btn btn-primary btn-sm ${isSaving ? 'loading' : ''}`}
+                disabled={isSaving}
+                aria-label="Save document"
+              >
+                {isSaving ? '' : 'Save'}
+              </button>
+              <button
+                onClick={handleLoad}
+                className="btn btn-outline btn-sm"
+                disabled={isLoading}
+                aria-label="Reload document"
+              >
+                Reload
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                className="btn btn-ghost btn-sm"
+                title="Enter Fullscreen"
+                aria-label="Enter fullscreen mode"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -451,6 +440,16 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
           onContentChange={handleContentChange}
           changeIntervalMs={1000}
         />
+      </div>
+
+      {/* Document Stats - Bottom */}
+      <div className="mt-2 sm:mt-4 p-2 sm:p-3 bg-base-200 rounded-lg">
+        <div className="text-xs text-base-content/50 text-center">
+          {document.word_count} words • v{document.version_number}
+          {lastSaved && (
+            <span className="ml-2">• Saved {lastSaved.toLocaleTimeString()}</span>
+          )}
+        </div>
       </div>
     </div>
   );
