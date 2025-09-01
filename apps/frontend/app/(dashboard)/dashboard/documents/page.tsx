@@ -1,337 +1,632 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { useGetRecentQuery } from '@/lib/store/api/documentsApi';
-import { Document } from '@/lib/store/api/api';
+import { useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAppSelector, useAppDispatch } from '@/lib/store/hooks';
+import { 
+  useGetFolderContentsQuery, 
+  useCreateFolderMutation,
+  useDeleteFolderMutation,
+  useLazySearchFoldersQuery,
+  useCreateDocumentMutation,
+  useDeleteDocumentMutation,
+  type FolderContentsItem
+} from '@/lib/store/api/api';
+import {
+  setViewMode,
+  setCurrentFolder,
+  setSearchQuery,
+  clearSearchQuery,
+  selectItem,
+  deselectItem,
+  selectAll,
+  clearSelection,
+  openCreateFolderModal,
+  closeCreateFolderModal,
+  openCreateDocumentModal,
+  closeCreateDocumentModal,
+  openDeleteConfirm,
+  closeDeleteConfirm,
+} from '@/lib/store/slices/uiSlice';
+import { useState } from 'react';
 
-
-
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+export default function DocumentsPage() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   
-  if (diffInHours < 24) {
-    return `${diffInHours}h ago`;
-  } else if (diffInHours < 168) {
-    return `${Math.floor(diffInHours / 24)}d ago`;
-  } else {
-    return date.toLocaleDateString();
-  }
-}
-
-function truncateContent(content: string, maxLength: number = 150) {
-  return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
-}
-
-export default function RecentDocumentsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'updated_at' | 'title' | 'word_count' | 'created_at'>('updated_at');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [documentsPerPage, setDocumentsPerPage] = useState(9);
-
-  // API query parameters
-  const queryParams = useMemo(() => ({
-    page: currentPage,
-    per_page: documentsPerPage,
-    search: searchQuery || undefined,
-    sort_by: sortBy,
-    sort_direction: 'desc' as const,
-  }), [currentPage, documentsPerPage, searchQuery, sortBy]);
-
+  // Redux state
   const {
-    data: response,
-    error,
-    isLoading,
-    isFetching,
-  } = useGetRecentQuery(queryParams);
+    viewMode,
+    currentFolderId,
+    searchQuery,
+    selectedItems,
+  } = useAppSelector((state) => state.ui.folders);
+  
+  const {
+    createFolder: createFolderModalOpen,
+    createDocument: createDocumentModalOpen,
+    deleteConfirm,
+  } = useAppSelector((state) => state.ui.modals);
 
-  const documents = response?.data || [];
-  const meta = response?.meta;
+  // Local state
+  const [newItemName, setNewItemName] = useState('');
 
-  // Reset to first page when search or sort changes
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
+  // RTK Query hooks
+  const {
+    data: folderContents,
+    error: folderError,
+    isLoading: isLoadingContents,
+    refetch: refetchContents,
+  } = useGetFolderContentsQuery(currentFolderId);
+
+  const [createFolder, { isLoading: isCreatingFolder }] = useCreateFolderMutation();
+  const [createDocument, { isLoading: isCreatingDocument }] = useCreateDocumentMutation();
+  const [deleteFolder] = useDeleteFolderMutation();
+  const [deleteDocument] = useDeleteDocumentMutation();
+  
+  const [searchFolders, { data: searchResults, isLoading: isSearching }] = useLazySearchFoldersQuery();
+
+  // Memoized filtered items
+  const items: FolderContentsItem[] = useMemo(() => {
+    if (searchQuery && searchResults) {
+      // Map search results to FolderContentsItem format
+      return searchResults.data.map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        modified: item.modified,
+        size: item.size,
+        // Add default values for missing properties
+        documentCount: undefined,
+        color: undefined,
+        icon: undefined,
+        shared: false,
+        favorite: false,
+      }));
+    }
+    return folderContents?.data?.items || [];
+  }, [searchQuery, searchResults, folderContents]);
+
+  const breadcrumbs = useMemo(() => {
+    return folderContents?.data?.breadcrumbs || [{ id: 'root', name: 'My Drive', path: '/' }];
+  }, [folderContents]);
+
+  // Search effect with debouncing
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery) {
+        searchFolders({ query: searchQuery });
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, searchFolders]);
+
+  // Handle authentication errors
+  useEffect(() => {
+    if (folderError && 'status' in folderError && folderError.status === 401) {
+      router.push('/login');
+    }
+  }, [folderError, router]);
+
+  // Event handlers
+  const handleItemSelect = (itemId: string) => {
+    if (selectedItems.includes(itemId)) {
+      dispatch(deselectItem(itemId));
+    } else {
+      dispatch(selectItem(itemId));
+    }
   };
 
-  const handleSortChange = (value: 'updated_at' | 'title' | 'word_count' | 'created_at') => {
-    setSortBy(value);
-    setCurrentPage(1);
+  const handleSelectAll = () => {
+    if (selectedItems.length === items.length) {
+      dispatch(clearSelection());
+    } else {
+      dispatch(selectAll(items.map(item => item.id)));
+    }
   };
 
-  // Loading and error states
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-base-content">Recent Documents</h1>
-            <p className="text-base-content/60 mt-1">Loading...</p>
+  const handleItemDoubleClick = (item: FolderContentsItem) => {
+    if (item.type === 'folder') {
+      dispatch(setCurrentFolder(item.id));
+      dispatch(clearSelection());
+    } else {
+      router.push(`/dashboard/documents/${item.id}/edit`);
+    }
+  };
+
+  const handleBreadcrumbClick = (index: number) => {
+    const breadcrumb = breadcrumbs[index];
+    if (breadcrumb.id === 'root') {
+      dispatch(setCurrentFolder(null));
+    } else {
+      dispatch(setCurrentFolder(breadcrumb.id));
+    }
+    dispatch(clearSelection());
+  };
+
+  const handleCreate = async () => {
+    if (!newItemName.trim()) return;
+    
+    try {
+      if (createFolderModalOpen) {
+        await createFolder({
+          name: newItemName,
+          parent_id: currentFolderId,
+        }).unwrap();
+        dispatch(closeCreateFolderModal());
+      } else if (createDocumentModalOpen) {
+        await createDocument({
+          title: newItemName,
+          folder_id: currentFolderId,
+          content: '',
+        }).unwrap();
+        dispatch(closeCreateDocumentModal());
+      }
+      
+      setNewItemName('');
+      refetchContents();
+    } catch (error) {
+      console.error('Error creating item:', error);
+      alert('Failed to create item');
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.itemId || !deleteConfirm.itemType) return;
+
+    try {
+      if (deleteConfirm.itemType === 'folder') {
+        await deleteFolder({ id: deleteConfirm.itemId }).unwrap();
+      } else {
+        await deleteDocument(deleteConfirm.itemId).unwrap();
+      }
+      
+      dispatch(closeDeleteConfirm());
+      dispatch(clearSelection());
+      refetchContents();
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      alert('Failed to delete item');
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedItems.length === 0) return;
+    
+    const firstItem = items.find(item => item.id === selectedItems[0]);
+    if (firstItem) {
+      dispatch(openDeleteConfirm({
+        id: selectedItems[0],
+        name: selectedItems.length > 1 ? `${selectedItems.length} items` : firstItem.name,
+        type: firstItem.type,
+      }));
+    }
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    dispatch(setSearchQuery(query));
+    dispatch(clearSelection());
+  };
+
+  const clearSearch = () => {
+    dispatch(clearSearchQuery());
+  };
+
+  // Component icons
+  const FolderIcon = () => (
+    <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+    </svg>
+  );
+
+  const DocumentIcon = () => (
+    <svg className="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  );
+
+  const isLoading = isLoadingContents || isSearching;
+  const isSearchActive = searchQuery.length > 0;
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex-1">
+          <h1 className="text-2xl font-semibold text-base-content mb-2">Documents</h1>
+          
+          {/* Breadcrumb */}
+          <div className="breadcrumbs text-sm">
+            <ul>
+              {breadcrumbs.map((crumb, index) => (
+                <li key={crumb.id}>
+                  <button
+                    onClick={() => handleBreadcrumbClick(index)}
+                    className="hover:text-primary transition-colors"
+                    disabled={index === breadcrumbs.length - 1}
+                  >
+                    {crumb.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="card bg-base-100 border border-base-300 animate-pulse">
-              <div className="card-body p-4">
-                <div className="h-4 bg-base-300 rounded mb-2"></div>
-                <div className="h-3 bg-base-300 rounded mb-4"></div>
-                <div className="h-3 bg-base-300 rounded mb-4"></div>
-                <div className="flex justify-between">
-                  <div className="h-3 bg-base-300 rounded w-20"></div>
-                  <div className="h-3 bg-base-300 rounded w-16"></div>
+
+        <div className="flex gap-2 items-center">
+          {/* Search Bar */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search folders and documents..."
+              value={searchQuery}
+              onChange={handleSearch}
+              className="input input-bordered input-sm w-64 pr-10"
+            />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs btn-circle"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+            {!searchQuery && (
+              <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            )}
+          </div>
+
+          {/* View Toggle */}
+          <div className="join">
+            <button
+              onClick={() => dispatch(setViewMode('grid'))}
+              className={`btn btn-sm join-item ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => dispatch(setViewMode('list'))}
+              className={`btn btn-sm join-item ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Create Dropdown */}
+          <div className="dropdown dropdown-end">
+            <div tabIndex={0} role="button" className="btn btn-primary btn-sm">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              New
+            </div>
+            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 border border-base-300">
+              <li>
+                <button onClick={() => dispatch(openCreateFolderModal())}>
+                  <FolderIcon />
+                  New Folder
+                </button>
+              </li>
+              <li>
+                <button onClick={() => dispatch(openCreateDocumentModal())}>
+                  <DocumentIcon />
+                  New Document
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Results Indicator */}
+      {isSearchActive && (
+        <div className="mb-4 p-3 bg-info/10 rounded-lg border border-info/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="text-sm">
+                Found {items.length} {items.length === 1 ? 'item' : 'items'} matching &ldquo;{searchQuery}&rdquo;
+              </span>
+            </div>
+            <button onClick={clearSearch} className="btn btn-ghost btn-xs">
+              Clear search
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toolbar - Always reserves space to prevent layout shift */}
+      <div className="mb-4 h-16">
+        <div className={`transition-all duration-200 ${selectedItems.length > 0 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
+          <div className="flex items-center gap-4 p-4 bg-base-200/50 rounded-xl">
+            <span className="text-sm font-medium">
+              {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected
+            </span>
+            <div className="flex gap-2">
+              <button className="btn btn-sm btn-ghost">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326" />
+                </svg>
+                Share
+              </button>
+              <button onClick={handleDeleteSelected} className="btn btn-sm btn-ghost text-error">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Items */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="text-center py-12">
+          {isSearchActive ? (
+            <>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-base-200 rounded-full mb-4">
+                <svg className="w-8 h-8 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-base-content mb-2">No results found</h3>
+              <p className="text-base-content/60 mb-4">Try adjusting your search terms</p>
+              <button 
+                onClick={clearSearch}
+                className="btn btn-primary btn-sm"
+              >
+                Clear Search
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-base-200 rounded-full mb-4">
+                <FolderIcon />
+              </div>
+              <h3 className="text-lg font-medium text-base-content mb-2">No items in this folder</h3>
+              <p className="text-base-content/60 mb-4">Create your first folder or document to get started</p>
+              <button 
+                onClick={() => dispatch(openCreateFolderModal())}
+                className="btn btn-primary btn-sm"
+              >
+                Create New
+              </button>
+            </>
+          )}
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className={`group relative p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer hover:shadow-md ${
+                selectedItems.includes(item.id)
+                  ? 'border-primary bg-primary/5'
+                  : 'border-base-300 hover:border-base-400'
+              }`}
+              onClick={() => handleItemSelect(item.id)}
+              onDoubleClick={() => handleItemDoubleClick(item)}
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-3">
+                  {item.type === 'folder' ? <FolderIcon /> : <DocumentIcon />}
+                </div>
+                <h3 className="text-sm font-medium text-base-content mb-1 line-clamp-2">
+                  {item.name}
+                </h3>
+                <div className="flex items-center gap-2 text-xs text-base-content/60">
+                  {item.size && <span>{item.size}</span>}
+                  {item.documentCount !== undefined && item.type === 'folder' && (
+                    <span>{item.documentCount} items</span>
+                  )}
+                  <span>{item.modified}</span>
+                  {item.shared && (
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0112 21c4.474 0 8.268-3.12 9.032-7.326" />
+                    </svg>
+                  )}
+                  {item.favorite && (
+                    <svg className="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  )}
                 </div>
               </div>
+              
+              {/* Checkbox */}
+              <input
+                type="checkbox"
+                checked={selectedItems.includes(item.id)}
+                onChange={() => handleItemSelect(item.id)}
+                className="absolute top-2 left-2 checkbox checkbox-primary checkbox-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => e.stopPropagation()}
+              />
             </div>
           ))}
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-error/10 rounded-full mb-4">
-            <svg className="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-base-content mb-2">Failed to load documents</h3>
-          <p className="text-base-content/60">Please try refreshing the page.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-base-content">Recent Documents</h1>
-          <p className="text-base-content/60 mt-1">
-            {meta && meta.total > 0 ? (
-              <>
-                Showing {meta.from || 1}-{meta.to || 0} of {meta.total} documents
-                {searchQuery && ` matching "${searchQuery}"`}
-                {isFetching && <span className="loading loading-spinner loading-xs ml-2"></span>}
-              </>
-            ) : (
-              <>
-                {meta?.total === 0 && searchQuery ? 'No documents found' : 'No documents yet'}
-                {isFetching && <span className="loading loading-spinner loading-xs ml-2"></span>}
-              </>
-            )}
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/documents/new"
-            className="btn btn-primary btn-sm sm:btn-md"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-            </svg>
-            New Document
-          </Link>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            placeholder="Search documents..."
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="input input-bordered w-full pl-10"
-          />
-          <svg className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        
-        <select 
-          value={sortBy} 
-          onChange={(e) => handleSortChange(e.target.value as 'updated_at' | 'title' | 'word_count' | 'created_at')}
-          className="select select-bordered w-full sm:w-auto"
-        >
-          <option value="updated_at">Sort by Updated</option>
-          <option value="title">Sort by Title</option>
-          <option value="word_count">Sort by Word Count</option>
-          <option value="created_at">Sort by Created</option>
-        </select>
-      </div>
-
-      {/* Documents Grid */}
-      {documents.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-base-200 rounded-full mb-4">
-            <svg className="w-8 h-8 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-base-content mb-2">No documents found</h3>
-          <p className="text-base-content/60">
-            {searchQuery ? 'Try adjusting your search terms.' : 'Create your first document to get started.'}
-          </p>
-        </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {documents.map((document) => (
+        <div className="bg-base-100 rounded-xl border border-base-300 overflow-hidden">
+          {/* List Header */}
+          <div className="flex items-center p-4 border-b border-base-300 bg-base-50">
+            <input
+              type="checkbox"
+              checked={selectedItems.length === items.length && items.length > 0}
+              onChange={handleSelectAll}
+              className="checkbox checkbox-primary checkbox-sm mr-4"
+            />
+            <div className="flex-1 grid grid-cols-12 gap-4 text-sm font-medium text-base-content/60">
+              <div className="col-span-6">Name</div>
+              <div className="col-span-2">Size</div>
+              <div className="col-span-3">Modified</div>
+              <div className="col-span-1">Shared</div>
+            </div>
+          </div>
+          
+          {/* List Items */}
+          {items.map((item) => (
             <div
-              key={document.id}
-              className="card bg-base-100 hover:bg-base-200 border border-base-300 hover:border-primary/20 transition-all duration-200 hover:shadow-lg relative"
+              key={item.id}
+              className={`flex items-center p-4 border-b border-base-300 last:border-b-0 hover:bg-base-50 cursor-pointer transition-colors ${
+                selectedItems.includes(item.id) ? 'bg-primary/5' : ''
+              }`}
+              onClick={() => handleItemSelect(item.id)}
+              onDoubleClick={() => handleItemDoubleClick(item)}
             >
-              <Link
-                href={`/documents/${document.id}/edit`}
-                className="card-body p-4 block"
-              >
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <h3 className="font-semibold text-base-content line-clamp-2 flex-1">
-                    {document.title}
-                  </h3>
+              <input
+                type="checkbox"
+                checked={selectedItems.includes(item.id)}
+                onChange={() => handleItemSelect(item.id)}
+                className="checkbox checkbox-primary checkbox-sm mr-4"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="flex-1 grid grid-cols-12 gap-4">
+                <div className="col-span-6 flex items-center gap-3">
+                  {item.type === 'folder' ? <FolderIcon /> : <DocumentIcon />}
+                  <span className="font-medium text-base-content">{item.name}</span>
+                  {item.favorite && (
+                    <svg className="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  )}
                 </div>
-                
-                <p className="text-sm text-base-content/70 mb-4 line-clamp-3">
-                  {truncateContent(document.content)}
-                </p>
-                
-                <div className="flex items-center justify-between text-xs text-base-content/50">
-                  <div className="flex items-center gap-4">
-                    {document.folder_name && (
-                      <span className="flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                        </svg>
-                        {document.folder_name}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      {document.word_count} words
-                    </span>
-                  </div>
-                  <span>{formatDate(document.updated_at)}</span>
+                <div className="col-span-2 text-sm text-base-content/60">
+                  {item.size || (item.documentCount !== undefined && item.type === 'folder' ? `${item.documentCount} items` : '—')}
                 </div>
-              </Link>
-              
-              <div className="dropdown dropdown-end absolute top-4 right-4">
-                <div tabIndex={0} role="button" className="btn btn-ghost btn-xs btn-circle">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                  </svg>
+                <div className="col-span-3 text-sm text-base-content/60">
+                  {item.modified}
                 </div>
-                <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-48 border border-base-300 z-10">
-                  <li><button onClick={() => window.location.href = `/documents/${document.id}/edit`}>Edit</button></li>
-                  <li><button>Duplicate</button></li>
-                  <li><button>Share</button></li>
-                  <li><hr className="my-1" /></li>
-                  <li><button className="text-error">Delete</button></li>
-                </ul>
+                <div className="col-span-1">
+                  {item.shared && (
+                    <svg className="w-4 h-4 text-base-content/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0112 21c4.474 0 8.268-3.12 9.032-7.326" />
+                    </svg>
+                  )}
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Pagination */}
-      {meta && meta.last_page > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-base-300">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-base-content/60">Items per page:</span>
-            <select
-              value={documentsPerPage}
-              onChange={(e) => {
-                setDocumentsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="select select-bordered select-sm"
-            >
-              <option value={6}>6</option>
-              <option value={9}>9</option>
-              <option value={12}>12</option>
-              <option value={24}>24</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(1)}
-              disabled={!meta || currentPage === 1}
-              className="btn btn-sm btn-ghost disabled:opacity-50"
-              aria-label="First page"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-              </svg>
-            </button>
-            
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={!meta || currentPage === 1}
-              className="btn btn-sm btn-ghost disabled:opacity-50"
-              aria-label="Previous page"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-
-            <div className="flex items-center gap-1">
-              {meta && Array.from({ length: meta.last_page }, (_, i) => i + 1)
-                .filter(page => {
-                  const distance = Math.abs(page - currentPage);
-                  return distance === 0 || distance === 1 || page === 1 || page === meta.last_page;
-                })
-                .map((page, index, filteredPages) => (
-                  <div key={page} className="flex items-center">
-                    {index > 0 && filteredPages[index - 1] !== page - 1 && (
-                      <span className="px-2 text-base-content/40">...</span>
-                    )}
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      className={`btn btn-sm ${
-                        currentPage === page
-                          ? 'btn-primary'
-                          : 'btn-ghost hover:bg-base-200'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  </div>
-                ))
-              }
+      {/* Create Folder Modal */}
+      {createFolderModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Create New Folder</h3>
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">Name</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Folder name"
+                className="input input-bordered"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreate();
+                }}
+                autoFocus
+              />
             </div>
+            <div className="modal-action">
+              <button onClick={() => {
+                dispatch(closeCreateFolderModal());
+                setNewItemName('');
+              }} className="btn">
+                Cancel
+              </button>
+              <button 
+                onClick={handleCreate} 
+                className="btn btn-primary"
+                disabled={!newItemName.trim() || isCreatingFolder}
+              >
+                {isCreatingFolder ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, meta?.last_page || 1))}
-              disabled={!meta || currentPage === meta.last_page}
-              className="btn btn-sm btn-ghost disabled:opacity-50"
-              aria-label="Next page"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            
-            <button
-              onClick={() => setCurrentPage(meta?.last_page || 1)}
-              disabled={!meta || currentPage === meta.last_page}
-              className="btn btn-sm btn-ghost disabled:opacity-50"
-              aria-label="Last page"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              </svg>
-            </button>
+      {/* Create Document Modal */}
+      {createDocumentModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Create New Document</h3>
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">Name</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Document name"
+                className="input input-bordered"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreate();
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="modal-action">
+              <button onClick={() => {
+                dispatch(closeCreateDocumentModal());
+                setNewItemName('');
+              }} className="btn">
+                Cancel
+              </button>
+              <button 
+                onClick={handleCreate} 
+                className="btn btn-primary"
+                disabled={!newItemName.trim() || isCreatingDocument}
+              >
+                {isCreatingDocument ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.isOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Confirm Deletion</h3>
+            <p className="mb-4">
+              Are you sure you want to delete &ldquo;{deleteConfirm.itemName}&rdquo;? This action cannot be undone.
+            </p>
+            <div className="modal-action">
+              <button 
+                onClick={() => dispatch(closeDeleteConfirm())} 
+                className="btn"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteConfirm} 
+                className="btn btn-error"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

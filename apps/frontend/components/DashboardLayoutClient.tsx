@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from './ThemeProvider';
 import { env } from '@/lib/config/env';
@@ -18,10 +18,20 @@ interface DashboardLayoutClientProps {
 
 export default function DashboardLayoutClient({ children }: DashboardLayoutClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const getNavLinkClass = (href: string) => {
+    const isActive = pathname === href;
+    return `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 ${
+      isActive 
+        ? 'bg-primary/10 text-primary hover:bg-primary/20' 
+        : 'hover:bg-base-200 text-base-content'
+    }`;
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -169,7 +179,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
             <div className="space-y-2">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors duration-200"
+                className={getNavLinkClass('/dashboard')}
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,7 +190,18 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
               
               <Link
                 href="/dashboard/documents"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-base-200 text-base-content transition-colors duration-200"
+                className={getNavLinkClass('/dashboard/documents')}
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                <span className="font-medium">Documents</span>
+              </Link>
+              
+              <Link
+                href="/dashboard/documents/recent"
+                className={getNavLinkClass('/dashboard/documents/recent')}
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,19 +211,8 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
               </Link>
               
               <Link
-                href="/dashboard/folders"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-base-200 text-base-content transition-colors duration-200"
-                onClick={() => setIsSidebarOpen(false)}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
-                <span className="font-medium">Folders</span>
-              </Link>
-              
-              <Link
                 href="/dashboard/shared"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-base-200 text-base-content transition-colors duration-200"
+                className={getNavLinkClass('/dashboard/shared')}
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +224,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
               <div className="pt-4 mt-4 border-t border-base-300">
                 <Link
                   href="/settings"
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-base-200 text-base-content transition-colors duration-200"
+                  className={getNavLinkClass('/settings')}
                   onClick={() => setIsSidebarOpen(false)}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
