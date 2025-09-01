@@ -132,7 +132,7 @@ export default function Home() {
             {/* Free Plan */}
             <div className="bg-gradient-to-br from-base-100 to-base-200 rounded-3xl p-8 shadow-sm border border-base-300/50 relative">
               <div className="text-center">
-                <h3 className="text-2xl font-medium text-base-content mb-2">Writer</h3>
+                <h3 className="text-2xl font-medium text-base-content mb-2">Free</h3>
                 <p className="text-base-content/70 mb-6">Perfect for getting started</p>
                 <div className="mb-8">
                   <span className="text-4xl font-light text-base-content">Free</span>
@@ -150,25 +150,31 @@ export default function Home() {
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Up to 5 documents</span>
+                  <span>100 documents</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Basic markdown editor</span>
+                  <span>20MB assets storage</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Live preview</span>
+                  <span>10 versions per document</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Public sharing</span>
+                  <span>Email support</span>
+                </li>
+                <li className="flex items-center gap-3 text-base-content/50">
+                  <svg className="w-5 h-5 text-base-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>No public sharing</span>
                 </li>
               </ul>
             </div>
@@ -181,11 +187,14 @@ export default function Home() {
                 </span>
               </div>
               <div className="text-center">
-                <h3 className="text-2xl font-medium text-base-content mb-2">Author</h3>
+                <h3 className="text-2xl font-medium text-base-content mb-2">Pro</h3>
                 <p className="text-base-content/70 mb-6">For serious writers</p>
                 <div className="mb-8">
-                  <span className="text-4xl font-light text-base-content">$9</span>
+                  <span className="text-4xl font-light text-base-content">$1.99</span>
                   <span className="text-base-content/60 ml-2">/month</span>
+                </div>
+                <div className="text-center mb-8">
+                  <p className="text-sm text-base-content/60">$19.9 yearly</p>
                 </div>
                 <Link 
                   href="/signup" 
@@ -199,55 +208,58 @@ export default function Home() {
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Unlimited documents</span>
+                  <span>5,000 documents</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Advanced editor features</span>
+                  <span>1GB assets storage</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Version history</span>
+                  <span>100 versions per document</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Private sharing with passwords</span>
+                  <span>Priority email support</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Folder organization</span>
+                  <span>Public sharing links</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Priority support</span>
+                  <span>Password protection</span>
                 </li>
               </ul>
             </div>
 
-            {/* Team Plan */}
+            {/* Max Plan */}
             <div className="bg-gradient-to-br from-base-100 to-base-200 rounded-3xl p-8 shadow-sm border border-base-300/50 relative">
               <div className="text-center">
-                <h3 className="text-2xl font-medium text-base-content mb-2">Publisher</h3>
-                <p className="text-base-content/70 mb-6">For teams and organizations</p>
+                <h3 className="text-2xl font-medium text-base-content mb-2">Max</h3>
+                <p className="text-base-content/70 mb-6">For power users</p>
                 <div className="mb-8">
-                  <span className="text-4xl font-light text-base-content">$29</span>
+                  <span className="text-4xl font-light text-base-content">$3.99</span>
                   <span className="text-base-content/60 ml-2">/month</span>
+                </div>
+                <div className="text-center mb-8">
+                  <p className="text-sm text-base-content/60">$39.9 yearly</p>
                 </div>
                 <Link 
                   href="/signup" 
                   className="btn btn-outline w-full mb-8 hover:bg-primary hover:border-primary hover:text-primary-content transition-all duration-300"
                 >
-                  Contact Sales
+                  Get Started
                 </Link>
               </div>
               <ul className="space-y-4 text-base-content/70">
@@ -255,37 +267,37 @@ export default function Home() {
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Everything in Author</span>
+                  <span>Unlimited documents</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Up to 10 team members</span>
+                  <span>10GB assets storage</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Collaboration features</span>
+                  <span>100 versions per document</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Advanced analytics</span>
+                  <span>Priority email support</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Custom branding</span>
+                  <span>Public sharing links</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Dedicated support</span>
+                  <span>Password protection</span>
                 </li>
               </ul>
             </div>
