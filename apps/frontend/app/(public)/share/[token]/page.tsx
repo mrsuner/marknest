@@ -48,7 +48,7 @@ export default function PublicDocumentPage() {
       setLoading(true);
       setPasswordError(null);
 
-      const url = new URL(`${env.API_BASE_URL}/share/${token}`);
+      const url = new URL(`${env.API_BASE_URL}/api/share/${token}`);
       if (passwordAttempt || urlPassword) {
         url.searchParams.set('password', passwordAttempt || urlPassword || '');
       }
@@ -229,11 +229,24 @@ export default function PublicDocumentPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-100 via-base-200 to-base-100">
       {shareSettings?.show_watermark && (
-        <div className="fixed inset-0 pointer-events-none z-10 flex items-center justify-center opacity-5">
-          <div className="text-6xl font-bold text-base-content transform rotate-45">
-            SHARED BY {owner?.name?.toUpperCase()}
-          </div>
-        </div>
+        <div 
+          className="fixed inset-0 pointer-events-none z-10"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
+              <svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+                <text x="100" y="50" text-anchor="middle" dominant-baseline="middle" 
+                      font-family="system-ui, -apple-system, sans-serif" 
+                      font-size="14" font-weight="bold" 
+                      fill="#64748b" opacity="0.08" 
+                      transform="rotate(45 100 50)">
+                  SHARED BY ${owner?.name?.toUpperCase() || 'USER'}
+                </text>
+              </svg>
+            `)}")`,
+            backgroundRepeat: 'repeat',
+            backgroundSize: '200px 100px'
+          }}
+        />
       )}
 
       <div className="container mx-auto px-6 py-8 max-w-4xl relative z-20">
