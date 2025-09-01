@@ -236,43 +236,60 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
     return (
       <div className="fixed inset-0 z-50 bg-base-100">
         {/* Fullscreen Toolbar */}
-        <div className="flex justify-between items-center p-4 bg-base-200 border-b border-base-300">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 p-2 sm:p-4 bg-base-200 border-b border-base-300">
+          <div className="flex flex-col sm:flex-row flex-1 gap-2 sm:gap-4">
             <input 
               type="text" 
               value={title} 
               onChange={(e) => handleTitleChange(e.target.value)}
-              className="input input-ghost text-lg font-semibold bg-transparent border-none focus:bg-base-100 w-96"
+              className="input input-ghost text-base sm:text-lg font-semibold bg-transparent border-none focus:bg-base-100 flex-1"
               placeholder="Document title..."
+              aria-label="Document title"
             />
-            <div className="flex gap-2">
+            <div className="flex gap-2 justify-between sm:justify-start">
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  className={`btn btn-primary btn-sm ${isSaving ? 'loading' : ''}`}
+                  disabled={isSaving}
+                  aria-label="Save document"
+                >
+                  {isSaving ? '' : 'Save'}
+                </button>
+                <button
+                  onClick={handleLoad}
+                  className="btn btn-outline btn-sm"
+                  disabled={isLoading}
+                  aria-label="Reload document"
+                >
+                  Reload
+                </button>
+              </div>
               <button
-                onClick={handleSave}
-                className={`btn btn-primary btn-sm ${isSaving ? 'loading' : ''}`}
-                disabled={isSaving}
+                onClick={exitFullscreen}
+                className="btn btn-ghost btn-sm sm:hidden"
+                title="Exit Fullscreen (Esc)"
+                aria-label="Exit fullscreen"
               >
-                {isSaving ? '' : 'Save'}
-              </button>
-              <button
-                onClick={handleLoad}
-                className="btn btn-outline btn-sm"
-                disabled={isLoading}
-              >
-                Reload
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4">
             <div className="text-xs text-base-content/50">
-              {document.word_count} words • v{document.version_number}
+              <span className="hidden sm:inline">{document.word_count} words • v{document.version_number}</span>
+              <span className="sm:hidden">{document.word_count}w • v{document.version_number}</span>
               {lastSaved && (
-                <span className="ml-2">• Saved {lastSaved.toLocaleTimeString()}</span>
+                <span className="ml-1 sm:ml-2">• {lastSaved.toLocaleTimeString()}</span>
               )}
             </div>
             <button
               onClick={exitFullscreen}
-              className="btn btn-ghost btn-sm"
+              className="btn btn-ghost btn-sm hidden sm:flex"
               title="Exit Fullscreen (Esc)"
+              aria-label="Exit fullscreen"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -282,7 +299,7 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
         </div>
         
         {/* Fullscreen Editor */}
-        <div className="h-[calc(100vh-73px)]">
+        <div className="h-[calc(100vh-65px)] sm:h-[calc(100vh-73px)]">
           <UncontrolledCrepeEditor
             ref={editorRef}
             isFullscreen={true}
@@ -297,56 +314,130 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
 
   return (
     <div className="w-full">
-      {/* Normal Toolbar */}
-      <div className="flex justify-between items-center mb-4 p-4 bg-base-200 rounded-t-lg">
-        <div className="flex items-center gap-4">
+      {/* Normal Toolbar - Responsive */}
+      <div className="bg-base-200 rounded-t-lg p-2 sm:p-4">
+        {/* Mobile Layout */}
+        <div className="sm:hidden space-y-2">
+          {/* Title input row */}
           <input 
             type="text" 
             value={title} 
             onChange={(e) => handleTitleChange(e.target.value)}
-            className="input input-ghost text-lg font-semibold bg-transparent border-none focus:bg-base-100 w-80"
+            className="input input-ghost text-base font-semibold bg-transparent border-none focus:bg-base-100 w-full"
             placeholder="Document title..."
+            aria-label="Document title"
           />
-          <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              className={`btn btn-primary btn-sm ${isSaving ? 'loading' : ''}`}
-              disabled={isSaving}
-            >
-              {isSaving ? '' : 'Save'}
-            </button>
-            <button
-              onClick={handleLoad}
-              className="btn btn-outline btn-sm"
-              disabled={isLoading}
-            >
-              Reload
-            </button>
-            <button
-              onClick={toggleFullscreen}
-              className="btn btn-ghost btn-sm"
-              title="Enter Fullscreen"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
-              </svg>
-            </button>
+          
+          {/* Actions and stats row */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-2">
+              <button
+                onClick={handleSave}
+                className={`btn btn-primary btn-sm ${isSaving ? 'loading' : ''}`}
+                disabled={isSaving}
+                aria-label="Save document"
+              >
+                {isSaving ? '' : 'Save'}
+              </button>
+              <button
+                onClick={handleLoad}
+                className="btn btn-outline btn-sm"
+                disabled={isLoading}
+                aria-label="Reload document"
+              >
+                Reload
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                className="btn btn-ghost btn-sm"
+                title="Enter Fullscreen"
+                aria-label="Enter fullscreen mode"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                </svg>
+              </button>
+            </div>
+            <div className="text-xs text-base-content/50">
+              {document.word_count}w • v{document.version_number}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          {error && (
-            <div className="text-error text-sm">
-              <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-              Error occurred
+          
+          {/* Status row - only show if there's content */}
+          {(lastSaved || error) && (
+            <div className="flex items-center justify-between text-xs">
+              {error && (
+                <div className="text-error flex items-center">
+                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  Error
+                </div>
+              )}
+              {lastSaved && (
+                <div className="text-base-content/50 ml-auto">
+                  Saved {lastSaved.toLocaleTimeString()}
+                </div>
+              )}
             </div>
           )}
-          <div className="text-xs text-base-content/50">
-            {document.word_count} words • v{document.version_number}
-            {lastSaved && (
-              <span className="ml-2">• Saved {lastSaved.toLocaleTimeString()}</span>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden sm:flex justify-between items-center">
+          <div className="flex items-center gap-4 flex-1">
+            <input 
+              type="text" 
+              value={title} 
+              onChange={(e) => handleTitleChange(e.target.value)}
+              className="input input-ghost text-lg font-semibold bg-transparent border-none focus:bg-base-100 w-full max-w-md lg:max-w-lg"
+              placeholder="Document title..."
+              aria-label="Document title"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleSave}
+                className={`btn btn-primary btn-sm ${isSaving ? 'loading' : ''}`}
+                disabled={isSaving}
+                aria-label="Save document"
+              >
+                {isSaving ? '' : 'Save'}
+              </button>
+              <button
+                onClick={handleLoad}
+                className="btn btn-outline btn-sm"
+                disabled={isLoading}
+                aria-label="Reload document"
+              >
+                Reload
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                className="btn btn-ghost btn-sm"
+                title="Enter Fullscreen"
+                aria-label="Enter fullscreen mode"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            {error && (
+              <div className="text-error text-sm">
+                <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                Error occurred
+              </div>
             )}
+            <div className="text-xs text-base-content/50">
+              {document.word_count} words • v{document.version_number}
+              {lastSaved && (
+                <span className="ml-2">• Saved {lastSaved.toLocaleTimeString()}</span>
+              )}
+            </div>
           </div>
         </div>
       </div>

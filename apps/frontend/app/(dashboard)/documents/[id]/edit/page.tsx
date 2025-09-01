@@ -15,10 +15,10 @@ export default async function EditDocumentPage({ params }: EditDocumentPageProps
 
   return (
     <div className="min-h-screen bg-base-100">
-      <div className="container mx-auto p-4">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold">Edit Document</h1>
-          <p className="text-base-content/70">Document ID: {id}</p>
+      <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4 max-w-7xl">
+        <div className="mb-2 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold">Edit Document</h1>
+          <p className="text-sm sm:text-base text-base-content/70 truncate">ID: {id}</p>
         </div>
         <DocumentEditor documentId={id} />
       </div>
