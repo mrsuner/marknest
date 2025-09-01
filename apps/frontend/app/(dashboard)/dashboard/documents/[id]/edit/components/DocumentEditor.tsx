@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import UncontrolledCrepeEditor, { CrepeEditorHandle } from './UncontrolledCrepeEditor';
-import { useGetDocumentQuery, useUpdateDocumentMutation } from '@/lib/store/api/documentsApi';
+import VersionHistory from './VersionHistory';
+import VersionComparison from './VersionComparison';
+import { useGetDocumentQuery, useUpdateDocumentMutation, type DocumentVersion } from '@/lib/store/api/documentsApi';
 
 interface DocumentEditorProps {
   documentId: string;
@@ -51,6 +53,12 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
   const [title, setTitle] = useState('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [currentDocumentId, setCurrentDocumentId] = useState(documentId);
+  
+  // Version history states
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showVersionComparison, setShowVersionComparison] = useState(false);
+  const [selectedVersionForComparison, setSelectedVersionForComparison] = useState<DocumentVersion | null>(null);
+  const [previewVersion, setPreviewVersion] = useState<DocumentVersion | null>(null);
   
   // Editor ref for imperative control
   const editorRef = useRef<CrepeEditorHandle>(null);
@@ -168,6 +176,34 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
     setIsFullscreen(false);
   };
 
+  // Version history handlers
+  const handleShowVersionHistory = () => {
+    setShowVersionHistory(true);
+  };
+
+  const handleCloseVersionHistory = () => {
+    setShowVersionHistory(false);
+    setPreviewVersion(null);
+    setSelectedVersionForComparison(null);
+  };
+
+  const handlePreviewVersion = (version: DocumentVersion) => {
+    setPreviewVersion(version);
+    // Optionally close version history to show preview
+    // setShowVersionHistory(false);
+  };
+
+  const handleCompareVersions = (version1: DocumentVersion, version2: DocumentVersion) => {
+    setSelectedVersionForComparison(version1);
+    setShowVersionComparison(true);
+    setShowVersionHistory(false);
+  };
+
+  const handleCloseVersionComparison = () => {
+    setShowVersionComparison(false);
+    setSelectedVersionForComparison(null);
+  };
+
   // Handle ESC key to exit fullscreen and Ctrl+S to save
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -264,6 +300,16 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
                 >
                   Reload
                 </button>
+                <button
+                  onClick={handleShowVersionHistory}
+                  className="btn btn-ghost btn-sm"
+                  title="Version History"
+                  aria-label="Show version history"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
               </div>
               <button
                 onClick={exitFullscreen}
@@ -346,6 +392,16 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
                 Reload
               </button>
               <button
+                onClick={handleShowVersionHistory}
+                className="btn btn-ghost btn-sm"
+                title="Version History"
+                aria-label="Show version history"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+              <button
                 onClick={toggleFullscreen}
                 className="btn btn-ghost btn-sm"
                 title="Enter Fullscreen"
@@ -417,6 +473,16 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
                 Reload
               </button>
               <button
+                onClick={handleShowVersionHistory}
+                className="btn btn-ghost btn-sm"
+                title="Version History"
+                aria-label="Show version history"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+              <button
                 onClick={toggleFullscreen}
                 className="btn btn-ghost btn-sm"
                 title="Enter Fullscreen"
@@ -451,6 +517,39 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
           )}
         </div>
       </div>
+
+      {/* Version History Modal */}
+      <VersionHistory
+        documentId={documentId}
+        isOpen={showVersionHistory}
+        onClose={handleCloseVersionHistory}
+        onPreviewVersion={handlePreviewVersion}
+        onCompareVersions={handleCompareVersions}
+        currentVersion={document.version_number}
+      />
+
+      {/* Version Comparison Modal */}
+      {selectedVersionForComparison && (
+        <VersionComparison
+          documentId={documentId}
+          version1={selectedVersionForComparison}
+          version2={{
+            id: 'current',
+            version_number: document.version_number,
+            title: document.title,
+            content: document.content || '',
+            word_count: document.word_count,
+            character_count: document.character_count,
+            change_summary: 'Current version',
+            operation: 'update' as const,
+            is_auto_save: false,
+            created_at: document.updated_at,
+            user: null,
+          }}
+          isOpen={showVersionComparison}
+          onClose={handleCloseVersionComparison}
+        />
+      )}
     </div>
   );
 }

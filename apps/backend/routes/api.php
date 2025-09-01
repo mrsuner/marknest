@@ -45,6 +45,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('{document}', [DocumentController::class, 'update']);
         Route::delete('{document}', [DocumentController::class, 'destroy']);
         
+        // Version management
+        Route::get('{document}/versions', [DocumentController::class, 'getVersions']);
+        Route::get('{document}/versions/{versionId}', [DocumentController::class, 'getVersion']);
+        Route::post('{document}/versions/{versionId}/restore', [DocumentController::class, 'restoreVersion']);
         
         // Media attachments
         Route::get('{document}/media', [DocumentController::class, 'getMedia']);

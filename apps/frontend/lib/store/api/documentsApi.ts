@@ -35,12 +35,47 @@ export interface DocumentStats {
 
 export interface DocumentVersion {
   id: string
-  document_id: string
+  document_id?: string
   version_number: number
-  content: string
-  change_summary?: string
+  title: string
+  content?: string
+  rendered_html?: string
+  word_count: number
+  character_count: number
+  size?: number
+  change_summary: string
+  operation: 'create' | 'update' | 'restore'
+  is_auto_save: boolean
+  diff?: any
   created_at: string
-  user_id: string
+  user: {
+    id: string
+    name: string
+    email: string
+  } | null
+}
+
+export interface DocumentVersionsResponse {
+  data: DocumentVersion[]
+  meta: {
+    current_page: number
+    last_page: number
+    per_page: number
+    total: number
+  }
+}
+
+export interface DocumentVersionResponse {
+  data: DocumentVersion
+}
+
+export interface RestoreVersionResponse {
+  data: {
+    id: string
+    title: string
+    version_number: number
+    message: string
+  }
 }
 
 export const documentsApi = api.injectEndpoints({
@@ -203,6 +238,35 @@ export const documentsApi = api.injectEndpoints({
       }),
       providesTags: ['Document'],
     }),
+    
+    // Version management endpoints
+    getDocumentVersions: builder.query<DocumentVersionsResponse, { documentId: string; page?: number; perPage?: number }>({
+      query: ({ documentId, page = 1, perPage = 10 }) => ({
+        url: `documents/${documentId}/versions`,
+        params: { page, per_page: perPage },
+      }),
+      providesTags: (_result, _error, { documentId }) => [{ type: 'DocumentVersion', id: documentId }],
+    }),
+    
+    getDocumentVersion: builder.query<DocumentVersionResponse, { documentId: string; versionId: string }>({
+      query: ({ documentId, versionId }) => `documents/${documentId}/versions/${versionId}`,
+      providesTags: (_result, _error, { documentId, versionId }) => [
+        { type: 'DocumentVersion', id: `${documentId}-${versionId}` }
+      ],
+    }),
+    
+    restoreDocumentVersion: builder.mutation<RestoreVersionResponse, { documentId: string; versionId: string; changeSummary?: string }>({
+      query: ({ documentId, versionId, changeSummary }) => ({
+        url: `documents/${documentId}/versions/${versionId}/restore`,
+        method: 'POST',
+        body: changeSummary ? { change_summary: changeSummary } : {},
+      }),
+      invalidatesTags: (_result, _error, { documentId }) => [
+        { type: 'Document', id: documentId },
+        { type: 'DocumentVersion', id: documentId },
+        'Document',
+      ],
+    }),
   }),
 })
 
@@ -224,4 +288,8 @@ export const {
   useGetTrashedQuery,
   useGlobalSearchQuery,
   useLazyGlobalSearchQuery,
+  // Version management hooks
+  useGetDocumentVersionsQuery,
+  useGetDocumentVersionQuery,
+  useRestoreDocumentVersionMutation,
 } = documentsApi

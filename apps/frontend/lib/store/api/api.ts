@@ -138,7 +138,7 @@ export interface User {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['Folder', 'Document', 'FolderContents', 'User', 'DocumentShare'],
+  tagTypes: ['Folder', 'Document', 'FolderContents', 'User', 'DocumentShare', 'DocumentVersion'],
   endpoints: (builder) => ({
     // User endpoints
     getMe: builder.query<User, void>({

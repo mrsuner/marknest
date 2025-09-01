@@ -259,6 +259,168 @@ class DocumentController extends Controller
    
 
     /**
+     * Get document versions
+     * Returns paginated list of versions for a document
+     * Includes version metadata and change summaries
+     */
+    public function getVersions(Request $request, string $document): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $doc = Document::where('id', $document)
+            ->where('user_id', $user->id)
+            ->where('is_trashed', false)
+            ->firstOrFail();
+        
+        $validated = $request->validate([
+            'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:50',
+        ]);
+        
+        $perPage = $validated['per_page'] ?? 10;
+        
+        $versions = DocumentVersion::where('document_id', $doc->id)
+            ->with('user:id,name,email')
+            ->orderBy('version_number', 'desc')
+            ->paginate($perPage);
+        
+        return response()->json([
+            'data' => $versions->map(function ($version) {
+                return [
+                    'id' => $version->id,
+                    'version_number' => $version->version_number,
+                    'title' => $version->title,
+                    'word_count' => $version->word_count,
+                    'character_count' => $version->character_count,
+                    'change_summary' => $version->change_summary,
+                    'operation' => $version->operation,
+                    'is_auto_save' => $version->is_auto_save,
+                    'created_at' => $version->created_at,
+                    'user' => $version->user ? [
+                        'id' => $version->user->id,
+                        'name' => $version->user->name,
+                        'email' => $version->user->email,
+                    ] : null,
+                ];
+            }),
+            'meta' => [
+                'current_page' => $versions->currentPage(),
+                'last_page' => $versions->lastPage(),
+                'per_page' => $versions->perPage(),
+                'total' => $versions->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Get specific version of a document
+     * Returns full content and metadata for a specific version
+     */
+    public function getVersion(string $document, string $versionId): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $doc = Document::where('id', $document)
+            ->where('user_id', $user->id)
+            ->where('is_trashed', false)
+            ->firstOrFail();
+        
+        $version = DocumentVersion::where('id', $versionId)
+            ->where('document_id', $doc->id)
+            ->with('user:id,name,email')
+            ->firstOrFail();
+        
+        return response()->json([
+            'data' => [
+                'id' => $version->id,
+                'document_id' => $version->document_id,
+                'version_number' => $version->version_number,
+                'title' => $version->title,
+                'content' => $version->content,
+                'rendered_html' => $version->rendered_html,
+                'size' => $version->size,
+                'word_count' => $version->word_count,
+                'character_count' => $version->character_count,
+                'change_summary' => $version->change_summary,
+                'diff' => $version->diff,
+                'operation' => $version->operation,
+                'is_auto_save' => $version->is_auto_save,
+                'created_at' => $version->created_at,
+                'user' => $version->user ? [
+                    'id' => $version->user->id,
+                    'name' => $version->user->name,
+                    'email' => $version->user->email,
+                ] : null,
+            ],
+        ]);
+    }
+
+    /**
+     * Restore a specific version of a document
+     * Creates a new version with the content from the specified version
+     */
+    public function restoreVersion(Request $request, string $document, string $versionId): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $doc = Document::where('id', $document)
+            ->where('user_id', $user->id)
+            ->where('is_trashed', false)
+            ->firstOrFail();
+        
+        $version = DocumentVersion::where('id', $versionId)
+            ->where('document_id', $doc->id)
+            ->firstOrFail();
+        
+        $validated = $request->validate([
+            'change_summary' => 'sometimes|string|max:500',
+        ]);
+        
+        DB::transaction(function () use ($doc, $version, $user, $validated) {
+            // Get the highest version number
+            $maxVersion = DocumentVersion::where('document_id', $doc->id)->max('version_number') ?? 0;
+            $newVersionNumber = $maxVersion + 1;
+            
+            // Update the document with the restored version's content
+            $doc->update([
+                'title' => $version->title,
+                'content' => $version->content,
+                'rendered_html' => $version->rendered_html,
+                'size' => $version->size,
+                'word_count' => $version->word_count,
+                'character_count' => $version->character_count,
+                'version_number' => $newVersionNumber,
+            ]);
+            
+            // Create a new version entry
+            DocumentVersion::create([
+                'document_id' => $doc->id,
+                'user_id' => $user->id,
+                'version_number' => $newVersionNumber,
+                'title' => $version->title,
+                'content' => $version->content,
+                'rendered_html' => $version->rendered_html,
+                'size' => $version->size,
+                'word_count' => $version->word_count,
+                'character_count' => $version->character_count,
+                'change_summary' => $validated['change_summary'] ?? "Restored from version {$version->version_number}",
+                'operation' => 'restore',
+                'is_auto_save' => false,
+                'created_at' => now(),
+            ]);
+        });
+        
+        return response()->json([
+            'data' => [
+                'id' => $doc->id,
+                'title' => $doc->title,
+                'version_number' => $doc->version_number,
+                'message' => 'Version restored successfully',
+            ],
+        ]);
+    }
+
+    /**
      * Get recently accessed documents
      * Returns documents ordered by last_accessed_at
      * Useful for dashboard "continue working" section
