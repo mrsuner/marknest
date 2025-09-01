@@ -8,11 +8,13 @@ import { env } from '@/lib/config/env';
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [error, setError] = useState('');
   const [debugOtp, setDebugOtp] = useState('');
+  const [loginMethod, setLoginMethod] = useState<'otp' | 'password'>('otp');
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,11 +85,53 @@ export default function LoginPage() {
     }
   };
 
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const response = await fetch(`${env.API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to login');
+      }
+
+      // Store the token
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      // Redirect to dashboard
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleResendOtp = () => {
     setShowOtpInput(false);
     setOtp('');
     setDebugOtp('');
     setError('');
+  };
+
+  const handleMethodSwitch = (method: 'otp' | 'password') => {
+    setLoginMethod(method);
+    setError('');
+    setShowOtpInput(false);
+    setOtp('');
+    setPassword('');
+    setDebugOtp('');
   };
 
   return (
@@ -102,7 +146,9 @@ export default function LoginPage() {
           </div>
           <h1 className="text-3xl lg:text-4xl font-light text-base-content mb-2 tracking-tight">Welcome Back</h1>
           <p className="text-base-content/60 text-lg font-light">
-            {!showOtpInput ? 'Enter your email to get started' : 'Enter the code sent to your email'}
+            {loginMethod === 'otp' && !showOtpInput && 'Enter your email to get started'}
+            {loginMethod === 'otp' && showOtpInput && 'Enter the code sent to your email'}
+            {loginMethod === 'password' && 'Sign in with your email and password'}
           </p>
         </div>
 
@@ -123,7 +169,35 @@ export default function LoginPage() {
               </div>
             )}
 
-            {!showOtpInput ? (
+            {/* Login Method Toggle */}
+            <div className="mb-6">
+              <div className="flex bg-base-200 p-1 rounded-2xl">
+                <button
+                  type="button"
+                  onClick={() => handleMethodSwitch('otp')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                    loginMethod === 'otp'
+                      ? 'bg-primary text-primary-content shadow-sm'
+                      : 'text-base-content/70 hover:text-base-content'
+                  }`}
+                >
+                  Email + Code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMethodSwitch('password')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                    loginMethod === 'password'
+                      ? 'bg-primary text-primary-content shadow-sm'
+                      : 'text-base-content/70 hover:text-base-content'
+                  }`}
+                >
+                  Email + Password
+                </button>
+              </div>
+            </div>
+
+            {loginMethod === 'otp' && !showOtpInput ? (
               <form onSubmit={handleRequestOtp} className="space-y-6">
                 <div>
                   <label className="block text-base-content font-medium mb-2">
@@ -155,7 +229,7 @@ export default function LoginPage() {
                   )}
                 </button>
               </form>
-            ) : (
+            ) : loginMethod === 'otp' && showOtpInput ? (
               <form onSubmit={handleVerifyOtp} className="space-y-6">
                 <div>
                   <label className="block text-base-content font-medium mb-2">
@@ -201,7 +275,63 @@ export default function LoginPage() {
                   Didn't receive code? Send again
                 </button>
               </form>
-            )}
+            ) : loginMethod === 'password' ? (
+              <form onSubmit={handlePasswordLogin} className="space-y-6">
+                <div>
+                  <label className="block text-base-content font-medium mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="w-full px-4 py-4 bg-base-100 border border-base-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-base placeholder:text-base-content/40"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-base-content font-medium mb-2">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full px-4 py-4 bg-base-100 border border-base-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-base placeholder:text-base-content/40"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-content px-6 py-4 rounded-2xl font-medium text-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
+                      Signing In...
+                    </div>
+                  ) : (
+                    'Sign In'
+                  )}
+                </button>
+
+                <div className="text-center">
+                  <Link 
+                    href="/forgot-password" 
+                    className="text-primary hover:text-primary/80 font-medium transition-colors duration-200"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
+              </form>
+            ) : null}
 
             <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">

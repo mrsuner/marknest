@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Mail\OtpMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -90,6 +91,48 @@ class AuthController extends Controller
         if (!$user) {
             throw ValidationException::withMessages([
                 'email' => ['User not found'],
+            ]);
+        }
+
+        // Create token
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ]);
+    }
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        $email = $request->email;
+        $password = $request->password;
+        
+        // Find the user
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid credentials'],
+            ]);
+        }
+
+        // Check if user has a password set
+        if (!$user->password) {
+            throw ValidationException::withMessages([
+                'email' => ['Please use email verification to sign in, or set a password first'],
+            ]);
+        }
+
+        // Verify password
+        if (!Hash::check($password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid credentials'],
             ]);
         }
 
