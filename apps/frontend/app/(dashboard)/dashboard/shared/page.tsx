@@ -21,6 +21,21 @@ interface DocumentShare {
   access_level: string;
   is_active: boolean;
   created_at: string;
+  allowed_emails?: string[];
+  description?: string;
+}
+
+interface EditShareFormData {
+  password?: string;
+  expires_at?: string;
+  max_views?: number;
+  allow_download: boolean;
+  allow_copy: boolean;
+  show_watermark: boolean;
+  access_level: string;
+  allowed_emails?: string[];
+  description?: string;
+  is_active: boolean;
 }
 
 interface ApiResponse {
@@ -40,6 +55,9 @@ export default function SharedLinksPage() {
   const [accessFilter, setAccessFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [editingShare, setEditingShare] = useState<DocumentShare | null>(null);
+  const [editFormData, setEditFormData] = useState<EditShareFormData | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   const fetchShares = async (page = 1) => {
     try {
@@ -150,6 +168,133 @@ export default function SharedLinksPage() {
     } catch (err) {
       console.error('Failed to delete share:', err);
     }
+  };
+
+  const openEditModal = (share: DocumentShare) => {
+    setEditingShare(share);
+    setEditFormData({
+      password: '',
+      expires_at: share.expires_at || '',
+      max_views: share.max_views,
+      allow_download: share.allow_download,
+      allow_copy: share.allow_copy,
+      show_watermark: share.show_watermark,
+      access_level: share.access_level,
+      allowed_emails: share.allowed_emails || [],
+      description: share.description || '',
+      is_active: share.is_active,
+    });
+  };
+
+  const closeEditModal = () => {
+    setEditingShare(null);
+    setEditFormData(null);
+    setEditLoading(false);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingShare || !editFormData) return;
+
+    setEditLoading(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      // Prepare the payload, only include changed fields
+      const payload: any = {};
+      
+      if (editFormData.password && editFormData.password.trim()) {
+        payload.password = editFormData.password;
+      }
+      
+      if (editFormData.expires_at !== (editingShare.expires_at || '')) {
+        payload.expires_at = editFormData.expires_at || null;
+      }
+      
+      if (editFormData.max_views !== editingShare.max_views) {
+        payload.max_views = editFormData.max_views || null;
+      }
+      
+      if (editFormData.allow_download !== editingShare.allow_download) {
+        payload.allow_download = editFormData.allow_download;
+      }
+      
+      if (editFormData.allow_copy !== editingShare.allow_copy) {
+        payload.allow_copy = editFormData.allow_copy;
+      }
+      
+      if (editFormData.show_watermark !== editingShare.show_watermark) {
+        payload.show_watermark = editFormData.show_watermark;
+      }
+      
+      if (editFormData.access_level !== editingShare.access_level) {
+        payload.access_level = editFormData.access_level;
+      }
+      
+      if (JSON.stringify(editFormData.allowed_emails || []) !== JSON.stringify(editingShare.allowed_emails || [])) {
+        payload.allowed_emails = editFormData.allowed_emails;
+      }
+      
+      if (editFormData.description !== (editingShare.description || '')) {
+        payload.description = editFormData.description;
+      }
+      
+      if (editFormData.is_active !== editingShare.is_active) {
+        payload.is_active = editFormData.is_active;
+      }
+
+      const response = await fetch(`${env.API_BASE_URL}/api/document-shares/${editingShare.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update share');
+      }
+
+      const updatedShare = await response.json();
+      setShares(shares.map(share => 
+        share.id === editingShare.id ? updatedShare : share
+      ));
+      
+      closeEditModal();
+    } catch (err) {
+      console.error('Failed to update share:', err);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const addEmailToList = () => {
+    if (!editFormData) return;
+    setEditFormData({
+      ...editFormData,
+      allowed_emails: [...(editFormData.allowed_emails || []), '']
+    });
+  };
+
+  const removeEmailFromList = (index: number) => {
+    if (!editFormData) return;
+    const newEmails = [...(editFormData.allowed_emails || [])];
+    newEmails.splice(index, 1);
+    setEditFormData({
+      ...editFormData,
+      allowed_emails: newEmails
+    });
+  };
+
+  const updateEmailInList = (index: number, email: string) => {
+    if (!editFormData) return;
+    const newEmails = [...(editFormData.allowed_emails || [])];
+    newEmails[index] = email;
+    setEditFormData({
+      ...editFormData,
+      allowed_emails: newEmails
+    });
   };
 
   const handleBulkAction = async (action: 'activate' | 'deactivate' | 'delete') => {
@@ -440,7 +585,11 @@ export default function SharedLinksPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                       </button>
-                      <button className="btn btn-ghost btn-xs" title="Edit">
+                      <button 
+                        className="btn btn-ghost btn-xs" 
+                        title="Edit"
+                        onClick={() => openEditModal(share)}
+                      >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
@@ -532,7 +681,12 @@ export default function SharedLinksPage() {
                     >
                       View
                     </button>
-                    <button className="btn btn-ghost btn-xs">Edit</button>
+                    <button 
+                      className="btn btn-ghost btn-xs"
+                      onClick={() => openEditModal(share)}
+                    >
+                      Edit
+                    </button>
                     <button className="btn btn-ghost btn-xs">Stats</button>
                     <button 
                       className="btn btn-ghost btn-xs text-error"
@@ -583,6 +737,230 @@ export default function SharedLinksPage() {
           <h3 className="text-lg font-medium text-base-content mb-2">No shared links yet</h3>
           <p className="text-base-content/60 mb-4">Share your documents to make them publicly accessible.</p>
           <button className="btn btn-primary">Create First Share</button>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingShare && editFormData && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-2xl">
+            <form onSubmit={handleEditSubmit}>
+              <h3 className="font-bold text-lg mb-4">
+                Edit Share: {editingShare.document.title}
+              </h3>
+              
+              <div className="space-y-6">
+                {/* Access Level - Full Width */}
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-medium">Access Level</span>
+                  </label>
+                  <select
+                    className="select select-bordered"
+                    value={editFormData.access_level}
+                    onChange={(e) => setEditFormData({ ...editFormData, access_level: e.target.value })}
+                  >
+                    <option value="public">Public</option>
+                    <option value="password">Password Protected</option>
+                    <option value="email_list">Email List Only</option>
+                  </select>
+                </div>
+
+                {/* Conditional Fields */}
+                {editFormData.access_level === 'password' && (
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-medium">Password</span>
+                      <span className="label-text-alt text-base-content/60">Leave empty to keep current</span>
+                    </label>
+                    <input
+                      type="password"
+                      className="input input-bordered"
+                      value={editFormData.password || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                      placeholder="Enter new password to change"
+                    />
+                  </div>
+                )}
+
+                {editFormData.access_level === 'email_list' && (
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-medium">Allowed Emails</span>
+                    </label>
+                    <div className="space-y-2">
+                      {(editFormData.allowed_emails || []).map((email, index) => (
+                        <div key={index} className="flex gap-2">
+                          <input
+                            type="email"
+                            className="input input-bordered flex-1"
+                            value={email}
+                            onChange={(e) => updateEmailInList(index, e.target.value)}
+                            placeholder="Enter email address"
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm text-error"
+                            onClick={() => removeEmailFromList(index)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={addEmailToList}
+                      >
+                        + Add Email
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Expiry and Max Views - Grid Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-medium">Expires At</span>
+                      <span className="label-text-alt text-base-content/60">Optional</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      className="input input-bordered"
+                      value={editFormData.expires_at ? new Date(editFormData.expires_at).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, expires_at: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+                    />
+                  </div>
+
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-medium">Max Views</span>
+                      <span className="label-text-alt text-base-content/60">Optional</span>
+                    </label>
+                    <input
+                      type="number"
+                      className="input input-bordered"
+                      value={editFormData.max_views || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, max_views: e.target.value ? parseInt(e.target.value) : undefined })}
+                      min="1"
+                      max="10000"
+                      placeholder="No limit"
+                    />
+                  </div>
+                </div>
+
+                {/* Description - Full Width */}
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-medium">Description</span>
+                    <span className="label-text-alt text-base-content/60">Optional</span>
+                  </label>
+                  <textarea
+                    className="textarea textarea-bordered"
+                    value={editFormData.description || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                    placeholder="Optional description for this share"
+                    rows={2}
+                  />
+                </div>
+
+                {/* Permissions and Status - Grid Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-medium">Permissions</span>
+                    </label>
+                    <div className="space-y-3 bg-base-100 border border-base-300 rounded-lg p-4">
+                      <div className="form-control">
+                        <label className="label cursor-pointer justify-start gap-3 py-2">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm"
+                            checked={editFormData.allow_download}
+                            onChange={(e) => setEditFormData({ ...editFormData, allow_download: e.target.checked })}
+                          />
+                          <span className="label-text">Allow Download</span>
+                        </label>
+                      </div>
+                      <div className="form-control">
+                        <label className="label cursor-pointer justify-start gap-3 py-2">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm"
+                            checked={editFormData.allow_copy}
+                            onChange={(e) => setEditFormData({ ...editFormData, allow_copy: e.target.checked })}
+                          />
+                          <span className="label-text">Allow Copy</span>
+                        </label>
+                      </div>
+                      <div className="form-control">
+                        <label className="label cursor-pointer justify-start gap-3 py-2">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm"
+                            checked={editFormData.show_watermark}
+                            onChange={(e) => setEditFormData({ ...editFormData, show_watermark: e.target.checked })}
+                          />
+                          <span className="label-text">Show Watermark</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-medium">Status</span>
+                    </label>
+                    <div className="bg-base-100 border border-base-300 rounded-lg p-4">
+                      <label className="label cursor-pointer justify-start gap-3 py-2">
+                        <input
+                          type="checkbox"
+                          className="toggle toggle-success"
+                          checked={editFormData.is_active}
+                          onChange={(e) => setEditFormData({ ...editFormData, is_active: e.target.checked })}
+                        />
+                        <div className="flex flex-col">
+                          <span className="label-text">{editFormData.is_active ? 'Active' : 'Inactive'}</span>
+                          <span className="label-text-alt text-base-content/60">
+                            {editFormData.is_active ? 'Share is publicly accessible' : 'Share is disabled'}
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-action">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={closeEditModal}
+                  disabled={editLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={editLoading}
+                >
+                  {editLoading ? (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button type="button" onClick={closeEditModal}>close</button>
+          </form>
         </div>
       )}
     </div>

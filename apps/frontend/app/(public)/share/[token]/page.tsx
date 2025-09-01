@@ -39,6 +39,9 @@ export default function PublicDocumentPage() {
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
+  const [settingsChanged, setSettingsChanged] = useState(false);
+  const [changeMessage, setChangeMessage] = useState<string | null>(null);
 
   const token = params.token as string;
   const urlPassword = searchParams.get('password');
@@ -73,6 +76,10 @@ export default function PublicDocumentPage() {
         return;
       }
 
+      if (response.status === 404) {
+        throw new Error('This share link has been deactivated, expired, or does not exist.');
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Failed to load document');
@@ -92,11 +99,116 @@ export default function PublicDocumentPage() {
     }
   };
 
+  const checkDocumentStatus = async () => {
+    try {
+      const url = new URL(`${env.API_BASE_URL}/api/share/${token}`);
+      if (urlPassword) {
+        url.searchParams.set('password', urlPassword);
+      }
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 404) {
+        setError('This share link has been deactivated, expired, or does not exist.');
+        setChangeMessage('The document owner has deactivated this share link.');
+        setSettingsChanged(true);
+        return;
+      }
+
+      if (response.status === 401 || response.status === 403) {
+        setError('Access to this document has been revoked or restricted.');
+        setChangeMessage('The document owner has changed the sharing settings.');
+        setSettingsChanged(true);
+        return;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (errorData.message?.includes('expired') || errorData.message?.includes('limit')) {
+          setError('This share link has expired or reached its view limit.');
+          setChangeMessage('The document is no longer accessible through this link.');
+          setSettingsChanged(true);
+        }
+        return;
+      }
+
+      const data: PublicDocumentResponse = await response.json();
+      
+      // Check if settings have changed
+      if (shareSettings) {
+        const settingsChanged = 
+          shareSettings.allow_download !== data.share_settings.allow_download ||
+          shareSettings.allow_copy !== data.share_settings.allow_copy ||
+          shareSettings.show_watermark !== data.share_settings.show_watermark;
+
+        if (settingsChanged) {
+          setShareSettings(data.share_settings);
+          setSettingsChanged(true);
+          
+          const changes = [];
+          if (shareSettings.allow_download && !data.share_settings.allow_download) {
+            changes.push('download disabled');
+          } else if (!shareSettings.allow_download && data.share_settings.allow_download) {
+            changes.push('download enabled');
+          }
+          
+          if (shareSettings.allow_copy && !data.share_settings.allow_copy) {
+            changes.push('copy disabled');
+          } else if (!shareSettings.allow_copy && data.share_settings.allow_copy) {
+            changes.push('copy enabled');
+          }
+          
+          if (!shareSettings.show_watermark && data.share_settings.show_watermark) {
+            changes.push('watermark added');
+          } else if (shareSettings.show_watermark && !data.share_settings.show_watermark) {
+            changes.push('watermark removed');
+          }
+
+          if (changes.length > 0) {
+            setChangeMessage(`Document settings updated: ${changes.join(', ')}`);
+            setTimeout(() => {
+              setSettingsChanged(false);
+              setChangeMessage(null);
+            }, 5000);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Status check failed:', err);
+    }
+  };
+
   useEffect(() => {
     if (token) {
       fetchDocument();
     }
   }, [token, urlPassword]);
+
+  useEffect(() => {
+    if (document && !error && !loading && !showPasswordForm) {
+      // Start periodic status checking every 30 seconds
+      const interval = setInterval(checkDocumentStatus, 30000);
+      setStatusCheckInterval(interval);
+
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
+    }
+    
+    return () => {
+      if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+        setStatusCheckInterval(null);
+      }
+    };
+  }, [document, error, loading, showPasswordForm, shareSettings]);
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,12 +233,12 @@ export default function PublicDocumentPage() {
 
     const blob = new Blob([document.content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = window.document.createElement('a');
     a.href = url;
     a.download = `${document.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
-    document.body.appendChild(a);
+    window.document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    window.document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
@@ -142,23 +254,59 @@ export default function PublicDocumentPage() {
   }
 
   if (error) {
+    const isDeactivated = error.includes('deactivated') || error.includes('does not exist');
+    const isExpired = error.includes('expired') || error.includes('limit');
+    const isAccessDenied = error.includes('revoked') || error.includes('restricted');
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-base-100 via-base-200 to-base-100 flex items-center justify-center">
         <div className="card bg-base-100 shadow-xl w-full max-w-md">
           <div className="card-body text-center">
-            <div className="text-error mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="mb-4">
+              {isDeactivated && (
+                <svg className="w-16 h-16 mx-auto text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                </svg>
+              )}
+              {isExpired && (
+                <svg className="w-16 h-16 mx-auto text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              {isAccessDenied && (
+                <svg className="w-16 h-16 mx-auto text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              )}
+              {!isDeactivated && !isExpired && !isAccessDenied && (
+                <svg className="w-16 h-16 mx-auto text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
             </div>
-            <h2 className="card-title justify-center text-error">Error</h2>
+            <h2 className="card-title justify-center">
+              {isDeactivated && <span className="text-warning">Share Deactivated</span>}
+              {isExpired && <span className="text-error">Share Expired</span>}
+              {isAccessDenied && <span className="text-error">Access Denied</span>}
+              {!isDeactivated && !isExpired && !isAccessDenied && <span className="text-error">Error</span>}
+            </h2>
             <p className="text-base-content/60 mb-4">{error}</p>
-            <button 
-              className="btn btn-primary btn-sm"
-              onClick={() => fetchDocument()}
-            >
-              Try Again
-            </button>
+            {changeMessage && (
+              <div className="alert alert-info alert-sm mb-4">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-xs">{changeMessage}</span>
+              </div>
+            )}
+            {!isDeactivated && !isExpired && (
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={() => fetchDocument()}
+              >
+                Try Again
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -228,6 +376,30 @@ export default function PublicDocumentPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-100 via-base-200 to-base-100">
+      {/* Settings Change Notification */}
+      {settingsChanged && changeMessage && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top duration-300">
+          <div className="alert alert-info shadow-lg max-w-md">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h3 className="font-bold">Document Updated</h3>
+              <div className="text-xs">{changeMessage}</div>
+            </div>
+            <button 
+              onClick={() => {
+                setSettingsChanged(false);
+                setChangeMessage(null);
+              }}
+              className="btn btn-sm btn-circle btn-ghost"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {shareSettings?.show_watermark && (
         <div 
           className="fixed inset-0 pointer-events-none z-10"
@@ -258,7 +430,7 @@ export default function PublicDocumentPage() {
           </div>
           
           <div className="flex gap-2">
-            {shareSettings?.allow_copy && (
+            {shareSettings?.allow_copy ? (
               <button
                 onClick={copyToClipboard}
                 className="btn btn-outline btn-sm"
@@ -269,8 +441,19 @@ export default function PublicDocumentPage() {
                 </svg>
                 Copy
               </button>
+            ) : (
+              <button
+                className="btn btn-outline btn-sm btn-disabled opacity-50"
+                title="Copy disabled by document owner"
+                disabled
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                </svg>
+                Copy Disabled
+              </button>
             )}
-            {shareSettings?.allow_download && (
+            {shareSettings?.allow_download ? (
               <button
                 onClick={downloadDocument}
                 className="btn btn-primary btn-sm"
@@ -280,6 +463,17 @@ export default function PublicDocumentPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Download
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary btn-sm btn-disabled opacity-50"
+                title="Download disabled by document owner"
+                disabled
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                </svg>
+                Download Disabled
               </button>
             )}
           </div>
