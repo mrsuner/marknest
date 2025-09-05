@@ -53,7 +53,7 @@ php artisan pint # Run code formatter (Laravel Pint)
 - **Framework**: Next.js 15 with App Router
 - **Styling**: TailwindCSS v4 + DaisyUI
 - **State Management**: Redux Toolkit with RTK Query + redux-persist
-- **Editor**: Milkdown for Markdown editing (planned)
+- **Editor**: Milkdown for Markdown editing
 - **Path Alias**: `@/*` maps to frontend root directory
 
 Key planned features:
