@@ -5,6 +5,7 @@ import uiSlice from './slices/uiSlice'
 import { api } from './api/api'
 import { baseApi } from './api/baseApi'
 import './api/preferencesApi' // Import to ensure the endpoints are injected
+import '@/features/files/domain/files.api' // Import to ensure the files endpoints are injected
 
 const persistConfig = {
   key: 'root',
