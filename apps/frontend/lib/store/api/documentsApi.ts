@@ -238,9 +238,33 @@ export const documentsApi = api.injectEndpoints({
       providesTags: ['Document'],
     }),
     
-    getTrashed: builder.query<{ data: Document[]; message: string }, void>({
-      query: () => 'collections/trash',
+    getTrashed: builder.query<{ 
+      data: any[]; // Trashed documents have additional fields like deleted_at and days_until_permanent_deletion
+      meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        from?: number | null;
+        to?: number | null;
+      };
+    }, { 
+      page?: number; 
+      per_page?: number; 
+    }>({
+      query: (params) => ({
+        url: 'collections/trash',
+        params,
+      }),
       providesTags: ['Document'],
+    }),
+    
+    forceDeleteDocument: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `documents/${id}/force`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Document', 'FolderContents'],
     }),
     
     globalSearch: builder.query<{ data: Document[]; message: string }, { query: string; filters?: object }>({
@@ -299,6 +323,7 @@ export const {
   useGetArchivedQuery,
   useGetRecentQuery,
   useGetTrashedQuery,
+  useForceDeleteDocumentMutation,
   useGlobalSearchQuery,
   useLazyGlobalSearchQuery,
   // Version management hooks

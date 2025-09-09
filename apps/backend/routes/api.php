@@ -45,6 +45,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('{document}', [DocumentController::class, 'update']);
         Route::delete('{document}', [DocumentController::class, 'destroy']);
         Route::post('{document}/duplicate', [DocumentController::class, 'duplicate']);
+        Route::post('{document}/restore', [DocumentController::class, 'restore']);
+        Route::delete('{document}/force', [DocumentController::class, 'forceDelete']);
 
         // Document actions
         Route::post('{document}/toggle-favorite', [DocumentActionController::class, 'toggleFavorite']);

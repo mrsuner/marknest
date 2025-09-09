@@ -534,4 +534,143 @@ class DocumentController extends Controller
             'message' => 'Document moved to trash successfully',
         ]);
     }
+
+    /**
+     * Get all trashed documents for the authenticated user.
+     *
+     * Returns a paginated list of soft-deleted documents that can be restored.
+     * Documents are automatically permanently deleted after 30 days.
+     *
+     * @return JsonResponse JSON response with paginated trashed documents
+     *
+     * @api GET /api/collections/trash
+     *
+     * @apiQuery {int} [page=1] Page number for pagination
+     * @apiQuery {int} [per_page=10] Items per page (max 100)
+     *
+     * @apiSuccess (200) {array} data Array of trashed document objects
+     * @apiSuccess (200) {object} meta Pagination metadata
+     */
+    public function getTrashed(): JsonResponse
+    {
+        $user = Auth::user();
+        $perPage = request()->input('per_page', 10);
+
+        $documents = Document::onlyTrashed()
+            ->where('user_id', $user->id)
+            ->with('folder:id,name,path')
+            ->orderBy('deleted_at', 'desc')
+            ->paginate($perPage);
+
+        return response()->json([
+            'data' => $documents->map(function ($doc) {
+                return [
+                    'id' => $doc->id,
+                    'title' => $doc->title,
+                    'slug' => $doc->slug,
+                    'folder_id' => $doc->folder_id,
+                    'folder_name' => $doc->folder?->name,
+                    'folder_path' => $doc->folder?->path,
+                    'word_count' => $doc->word_count,
+                    'character_count' => $doc->character_count,
+                    'size' => $doc->size,
+                    'version_number' => $doc->version_number,
+                    'is_favorite' => $doc->is_favorite,
+                    'is_archived' => $doc->is_archived,
+                    'tags' => $doc->tags,
+                    'status' => $doc->status,
+                    'deleted_at' => $doc->deleted_at,
+                    'days_until_permanent_deletion' => max(0, 30 - floor($doc->deleted_at->diffInDays(now()))),
+                    'created_at' => $doc->created_at,
+                    'updated_at' => $doc->updated_at,
+                ];
+            }),
+            'meta' => [
+                'current_page' => $documents->currentPage(),
+                'last_page' => $documents->lastPage(),
+                'per_page' => $documents->perPage(),
+                'total' => $documents->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Restore a soft-deleted document.
+     *
+     * Restores a document from trash, making it accessible again.
+     *
+     * @param  string  $document  Document ID to restore
+     * @return JsonResponse JSON response with success message
+     *
+     * @api POST /api/documents/{id}/restore
+     *
+     * @apiParam {string} id Document unique ID
+     *
+     * @apiSuccess (200) {string} message Success message
+     * @apiSuccess (200) {object} data Restored document data
+     *
+     * @apiError (404) Document not found in trash
+     */
+    public function restore(string $document): JsonResponse
+    {
+        $user = Auth::user();
+
+        $doc = Document::onlyTrashed()
+            ->where('id', $document)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$doc) {
+            return response()->json(['message' => 'Document not found in trash'], 404);
+        }
+
+        $doc->restore();
+
+        return response()->json([
+            'message' => 'Document restored successfully',
+            'data' => [
+                'id' => $doc->id,
+                'title' => $doc->title,
+                'folder_id' => $doc->folder_id,
+            ],
+        ]);
+    }
+
+    /**
+     * Permanently delete a soft-deleted document.
+     *
+     * Permanently removes a document from the database. This action cannot be undone.
+     *
+     * @param  string  $document  Document ID to permanently delete
+     * @return JsonResponse JSON response with success message
+     *
+     * @api DELETE /api/documents/{id}/force
+     *
+     * @apiParam {string} id Document unique ID
+     *
+     * @apiSuccess (200) {string} message Success message
+     *
+     * @apiError (404) Document not found in trash
+     */
+    public function forceDelete(string $document): JsonResponse
+    {
+        $user = Auth::user();
+
+        $doc = Document::onlyTrashed()
+            ->where('id', $document)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$doc) {
+            return response()->json(['message' => 'Document not found in trash'], 404);
+        }
+
+        // Also delete related versions
+        $doc->versions()->delete();
+        $doc->forceDelete();
+
+        return response()->json([
+            'message' => 'Document permanently deleted',
+        ]);
+    }
 }
