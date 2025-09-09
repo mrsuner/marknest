@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\MediaFile;
+use App\Data\MediaFileData;
+use App\Traits\ChecksSubscriptionLimits;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,6 +14,7 @@ use Illuminate\Support\Str;
 
 class FileController extends Controller
 {
+    use ChecksSubscriptionLimits;
     public function index(Request $request): JsonResponse
     {
         $query = MediaFile::where('user_id', $request->user()->id);
@@ -63,23 +66,42 @@ class FileController extends Controller
         $perPage = min($request->input('per_page', 50), 100);
         $files = $query->paginate($perPage);
 
+        $user = $request->user();
+        
         return response()->json([
             'success' => true,
-            'data' => $files->items(),
+            'data' => MediaFileData::collect($files->items()),
             'meta' => [
                 'current_page' => $files->currentPage(),
                 'last_page' => $files->lastPage(),
                 'per_page' => $files->perPage(),
                 'total' => $files->total(),
+            ],
+            'storage' => [
+                'used' => $this->getUserStorageUsed($user),
+                'limit' => $this->getUserStorageLimit($user),
+                'remaining' => $this->getUserStorageRemaining($user),
+                'used_formatted' => $this->formatBytes($this->getUserStorageUsed($user)),
+                'limit_formatted' => $this->formatBytes($this->getUserStorageLimit($user)),
+                'remaining_formatted' => $this->formatBytes($this->getUserStorageRemaining($user)),
+            ],
+            'limits' => [
+                'upload_size_limit' => $this->getUserUploadSizeLimit($user),
+                'upload_size_limit_formatted' => $this->formatBytes($this->getUserUploadSizeLimit($user)),
             ]
         ]);
     }
 
     public function store(Request $request): JsonResponse
     {
+        $user = $request->user();
+        
+        // Get user's upload size limit in KB for validation rule
+        $uploadLimitKB = ceil($this->getUserUploadSizeLimit($user) / 1024);
+        
         $validator = Validator::make($request->all(), [
             'files' => 'required|array|max:10',
-            'files.*' => 'required|file|max:10240', // 10MB max per file
+            'files.*' => "required|file|max:{$uploadLimitKB}", // Dynamic limit based on user's plan
             'alt_text.*' => 'nullable|string|max:255',
             'description.*' => 'nullable|string|max:1000',
             'is_public.*' => 'nullable|boolean',
@@ -89,18 +111,58 @@ class FileController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
+                'limits' => [
+                    'upload_size_limit' => $this->getUserUploadSizeLimit($user),
+                    'upload_size_limit_formatted' => $this->formatBytes($this->getUserUploadSizeLimit($user)),
+                ]
+            ], 422);
+        }
+
+        // Check total storage before processing files
+        $totalSize = 0;
+        $files = $request->file('files');
+        foreach ($files as $file) {
+            $totalSize += $file->getSize();
+        }
+
+        if (!$this->userHasStorageFor($user, $totalSize)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient storage space. Please upgrade your plan or delete some files.',
+                'storage' => [
+                    'used' => $this->getUserStorageUsed($user),
+                    'limit' => $this->getUserStorageLimit($user),
+                    'remaining' => $this->getUserStorageRemaining($user),
+                    'used_formatted' => $this->formatBytes($this->getUserStorageUsed($user)),
+                    'limit_formatted' => $this->formatBytes($this->getUserStorageLimit($user)),
+                    'remaining_formatted' => $this->formatBytes($this->getUserStorageRemaining($user)),
+                    'required' => $totalSize,
+                    'required_formatted' => $this->formatBytes($totalSize),
+                ]
             ], 422);
         }
 
         $uploadedFiles = [];
-        $files = $request->file('files');
         $altTexts = $request->input('alt_text', []);
         $descriptions = $request->input('description', []);
         $isPublicFlags = $request->input('is_public', []);
 
         foreach ($files as $index => $file) {
             try {
+                // Double-check individual file size
+                if ($this->fileExceedsUploadLimit($user, $file->getSize())) {
+                    $uploadedFiles[] = [
+                        'success' => false,
+                        'message' => 'File exceeds upload size limit',
+                        'original_name' => $file->getClientOriginalName(),
+                        'file_size' => $file->getSize(),
+                        'file_size_formatted' => $this->formatBytes($file->getSize()),
+                        'limit' => $this->getUserUploadSizeLimit($user),
+                        'limit_formatted' => $this->formatBytes($this->getUserUploadSizeLimit($user)),
+                    ];
+                    continue;
+                }
                 // Generate file hash for duplicate detection
                 $fileContent = file_get_contents($file->getRealPath());
                 $fileHash = hash('sha256', $fileContent);
@@ -115,7 +177,7 @@ class FileController extends Controller
                         'success' => false,
                         'message' => 'File already exists',
                         'original_name' => $file->getClientOriginalName(),
-                        'existing_file' => $existingFile
+                        'existing_file' => MediaFileData::from($existingFile)
                     ];
                     continue;
                 }
@@ -127,7 +189,6 @@ class FileController extends Controller
 
                 // Store file
                 $path = $file->storeAs('media', $filename, 'public');
-                $url = Storage::url($path);
 
                 // Create database record
                 $mediaFile = MediaFile::create([
@@ -139,7 +200,6 @@ class FileController extends Controller
                     'size' => $file->getSize(),
                     'disk' => 'public',
                     'path' => $path,
-                    'url' => $url,
                     'alt_text' => $altTexts[$index] ?? null,
                     'description' => $descriptions[$index] ?? null,
                     'hash' => $fileHash,
@@ -150,8 +210,11 @@ class FileController extends Controller
 
                 $uploadedFiles[] = [
                     'success' => true,
-                    'file' => $mediaFile
+                    'file' => MediaFileData::from($mediaFile)
                 ];
+                
+                // Update user's storage usage
+                $user->increment('storage_used', $file->getSize());
 
             } catch (\Exception $e) {
                 $uploadedFiles[] = [
@@ -164,6 +227,9 @@ class FileController extends Controller
 
         $successCount = collect($uploadedFiles)->where('success', true)->count();
         $failureCount = collect($uploadedFiles)->where('success', false)->count();
+        
+        // Refresh user to get updated storage_used
+        $user->refresh();
 
         return response()->json([
             'success' => $successCount > 0,
@@ -174,6 +240,18 @@ class FileController extends Controller
                 'total' => count($uploadedFiles),
                 'successful' => $successCount,
                 'failed' => $failureCount
+            ],
+            'storage' => [
+                'used' => $this->getUserStorageUsed($user),
+                'limit' => $this->getUserStorageLimit($user),
+                'remaining' => $this->getUserStorageRemaining($user),
+                'used_formatted' => $this->formatBytes($this->getUserStorageUsed($user)),
+                'limit_formatted' => $this->formatBytes($this->getUserStorageLimit($user)),
+                'remaining_formatted' => $this->formatBytes($this->getUserStorageRemaining($user)),
+            ],
+            'limits' => [
+                'upload_size_limit' => $this->getUserUploadSizeLimit($user),
+                'upload_size_limit_formatted' => $this->formatBytes($this->getUserUploadSizeLimit($user)),
             ]
         ], $successCount > 0 ? 201 : 422);
     }
@@ -190,7 +268,7 @@ class FileController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $file
+            'data' => MediaFileData::from($file)
         ]);
     }
 
@@ -222,7 +300,7 @@ class FileController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $file->fresh()
+            'data' => MediaFileData::from($file->fresh())
         ]);
     }
 
@@ -237,6 +315,9 @@ class FileController extends Controller
         }
 
         try {
+            // Store file size before deletion
+            $fileSize = $file->size;
+            
             // Delete the actual file from storage
             if (Storage::disk($file->disk)->exists($file->path)) {
                 Storage::disk($file->disk)->delete($file->path);
@@ -244,10 +325,22 @@ class FileController extends Controller
 
             // Delete the database record
             $file->delete();
+            
+            // Update user's storage usage
+            $user = $request->user();
+            $user->decrement('storage_used', $fileSize);
 
             return response()->json([
                 'success' => true,
-                'message' => 'File deleted successfully'
+                'message' => 'File deleted successfully',
+                'storage' => [
+                    'used' => $this->getUserStorageUsed($user),
+                    'limit' => $this->getUserStorageLimit($user),
+                    'remaining' => $this->getUserStorageRemaining($user),
+                    'used_formatted' => $this->formatBytes($this->getUserStorageUsed($user)),
+                    'limit_formatted' => $this->formatBytes($this->getUserStorageLimit($user)),
+                    'remaining_formatted' => $this->formatBytes($this->getUserStorageRemaining($user)),
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([

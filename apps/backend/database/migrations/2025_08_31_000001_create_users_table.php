@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable();
-            $table->enum('plan', ['free', 'pro', 'enterprise'])->default('free');
+            $table->enum('plan', ['free', 'pro', 'max'])->default('free');
             $table->bigInteger('storage_used')->default(0);
             $table->bigInteger('storage_limit')->default(104857600); // 100MB for free plan
             $table->integer('document_count')->default(0);

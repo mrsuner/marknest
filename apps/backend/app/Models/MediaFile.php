@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 
 class MediaFile extends Model
 {
@@ -21,7 +22,6 @@ class MediaFile extends Model
         'size',
         'disk',
         'path',
-        'url',
         'alt_text',
         'description',
         'metadata',
@@ -80,5 +80,10 @@ class MediaFile extends Model
         }
         
         return round($bytes, 2) . ' ' . $units[$i];
+    }
+
+    public function getUrlAttribute(): string
+    {
+        return Storage::disk($this->disk)->url($this->path);
     }
 }

@@ -20,7 +20,7 @@ return [
             'stripe_price_monthly' => null,
             'stripe_price_yearly' => null,
             'features' => [
-                'documents' => 10,
+                'documents' => 100,
                 'storage' => 100, // MB
                 'version_history_days' => 7,
                 'public_sharing' => true,
@@ -31,8 +31,9 @@ return [
                 'priority_support' => false,
             ],
             'limits' => [
-                'document_limit' => 10,
+                'document_limit' => 100,
                 'storage_limit' => 104857600, // 100MB in bytes
+                'upload_size_limit' => 204800, // 200KB per file
                 'links_limit' => 5,
                 'version_history_days' => 7,
             ],
@@ -46,7 +47,7 @@ return [
             'stripe_price_monthly' => env('STRIPE_PRICE_PRO_MONTHLY'),
             'stripe_price_yearly' => env('STRIPE_PRICE_PRO_YEARLY'),
             'features' => [
-                'documents' => 'Unlimited',
+                'documents' => 100000,
                 'storage' => 10240, // 10GB
                 'version_history_days' => 90,
                 'public_sharing' => true,
@@ -57,22 +58,23 @@ return [
                 'priority_support' => true,
             ],
             'limits' => [
-                'document_limit' => -1, // Unlimited
+                'document_limit' => 100000, // Unlimited
                 'storage_limit' => 10737418240, // 10GB in bytes
+                'upload_size_limit' => 3145728, // 3MB per file
                 'links_limit' => -1, // Unlimited
                 'version_history_days' => 90,
             ],
         ],
         
-        'enterprise' => [
-            'name' => 'Enterprise',
-            'description' => 'For teams and organizations',
+        'max' => [
+            'name' => 'Max',
+            'description' => 'For person who who need more storage and features',
             'price_monthly' => 29,
             'price_yearly' => 290, // ~$24/month when paid yearly
             'stripe_price_monthly' => env('STRIPE_PRICE_ENTERPRISE_MONTHLY'),
             'stripe_price_yearly' => env('STRIPE_PRICE_ENTERPRISE_YEARLY'),
             'features' => [
-                'documents' => 'Unlimited',
+                'documents' => -1,
                 'storage' => 102400, // 100GB
                 'version_history_days' => 365,
                 'public_sharing' => true,
@@ -89,6 +91,7 @@ return [
             'limits' => [
                 'document_limit' => -1, // Unlimited
                 'storage_limit' => 107374182400, // 100GB in bytes
+                'upload_size_limit' => 5242880, // 5MB per file
                 'links_limit' => -1, // Unlimited
                 'version_history_days' => 365,
             ],

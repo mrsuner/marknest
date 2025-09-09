@@ -22,7 +22,6 @@ return new class extends Migration
             $table->integer('size'); // File size in bytes
             $table->string('disk', 20)->default('public'); // Storage disk
             $table->string('path'); // File path on disk
-            $table->string('url')->nullable(); // Public URL if applicable
             $table->string('alt_text')->nullable(); // For accessibility
             $table->text('description')->nullable();
             $table->json('metadata')->nullable(); // Image dimensions, EXIF data, etc.

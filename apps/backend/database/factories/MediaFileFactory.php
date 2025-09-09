@@ -37,7 +37,6 @@ class MediaFileFactory extends Factory
             'size' => $size,
             'disk' => 'public',
             'path' => 'uploads/' . $filename,
-            'url' => fake()->optional()->url(),
             'alt_text' => str_starts_with($mimeType, 'image/') ? fake()->sentence() : null,
             'description' => fake()->optional()->sentence(),
             'metadata' => $this->getMetadataForMimeType($mimeType),

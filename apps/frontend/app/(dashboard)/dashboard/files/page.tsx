@@ -14,6 +14,10 @@ export default function FilesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [uploadLimits, setUploadLimits] = useState<{
+    upload_size_limit: number;
+    upload_size_limit_formatted: string;
+  } | null>(null);
   const [pagination, setPagination] = useState({
     current_page: 1,
     last_page: 1,
@@ -29,6 +33,10 @@ export default function FilesPage() {
       const response = await filesAPI.getFiles(filters);
       setFiles(response.data);
       setPagination(response.meta);
+      // Store upload limits if available
+      if (response.limits) {
+        setUploadLimits(response.limits);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load files');
       console.error('Error loading files:', err);
@@ -57,8 +65,19 @@ export default function FilesPage() {
 
   // Drag and drop functionality
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    setIsUploading(true);
     setError(null);
+    
+    // Frontend validation - check file sizes
+    if (uploadLimits) {
+      const oversizedFiles = acceptedFiles.filter(file => file.size > uploadLimits.upload_size_limit);
+      if (oversizedFiles.length > 0) {
+        const fileNames = oversizedFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ');
+        setError(`The following files exceed the ${uploadLimits.upload_size_limit_formatted} upload limit: ${fileNames}`);
+        return;
+      }
+    }
+    
+    setIsUploading(true);
     
     try {
       const response = await filesAPI.uploadFiles(acceptedFiles);
@@ -72,18 +91,76 @@ export default function FilesPage() {
         const failedCount = response.summary.failed;
         
         if (failedCount > 0) {
-          setError(`Uploaded ${successCount} files successfully, ${failedCount} failed`);
+          // Check if there are detailed errors
+          if (response.data) {
+            const failedFiles = response.data.filter((item: any) => !item.success);
+            if (failedFiles.length > 0) {
+              const errorMessages = failedFiles.map((item: any) => 
+                `${item.original_name}: ${item.message}`
+              ).join('\n');
+              setError(`Upload partially failed:\n${errorMessages}`);
+            } else {
+              setError(`Uploaded ${successCount} files successfully, ${failedCount} failed`);
+            }
+          } else {
+            setError(`Uploaded ${successCount} files successfully, ${failedCount} failed`);
+          }
         }
       } else {
-        setError(response.message);
+        // Check for validation errors with details
+        if (response.errors && typeof response.errors === 'object') {
+          const errorMessages = Object.entries(response.errors)
+            .map(([field, messages]) => {
+              // Extract file index from field name like "files.0"
+              const fileIndex = field.match(/files\.(\d+)/)?.[1];
+              const fileName = fileIndex !== undefined ? acceptedFiles[parseInt(fileIndex)]?.name : field;
+              return `${fileName}: ${Array.isArray(messages) ? messages.join(', ') : messages}`;
+            })
+            .join('\n');
+          
+          // Add limits info if available
+          let fullError = errorMessages;
+          if (response.limits) {
+            fullError += `\n\nUpload limit: ${response.limits.upload_size_limit_formatted}`;
+            setUploadLimits(response.limits);
+          }
+          setError(fullError);
+        } else {
+          setError(response.message || 'Upload failed');
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      // Handle network or other errors
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errorResponse = (err as any).response?.data;
+        if (errorResponse?.errors && typeof errorResponse.errors === 'object') {
+          const errorMessages = Object.entries(errorResponse.errors)
+            .map(([field, messages]) => {
+              const fileIndex = field.match(/files\.(\d+)/)?.[1];
+              const fileName = fileIndex !== undefined ? acceptedFiles[parseInt(fileIndex)]?.name : field;
+              return `${fileName}: ${Array.isArray(messages) ? messages.join(', ') : messages}`;
+            })
+            .join('\n');
+          
+          let fullError = errorMessages;
+          if (errorResponse.limits) {
+            fullError += `\n\nUpload limit: ${errorResponse.limits.upload_size_limit_formatted}`;
+            setUploadLimits(errorResponse.limits);
+          }
+          setError(fullError);
+        } else if (errorResponse?.message) {
+          setError(errorResponse.message);
+        } else {
+          setError(err instanceof Error ? err.message : 'Upload failed');
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'Upload failed');
+      }
       console.error('Upload error:', err);
     } finally {
       setIsUploading(false);
     }
-  }, [loadFiles]);
+  }, [loadFiles, uploadLimits]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
@@ -258,7 +335,13 @@ export default function FilesPage() {
             <svg className="w-6 h-6 stroke-current shrink-0" fill="none" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>{error}</span>
+            <div className="flex-1">
+              {error.split('\n').map((line, index) => (
+                <div key={index} className={index > 0 ? 'mt-1' : ''}>
+                  {line}
+                </div>
+              ))}
+            </div>
             <button 
               className="btn btn-sm btn-ghost" 
               onClick={() => setError(null)}
@@ -317,10 +400,21 @@ export default function FilesPage() {
                 {isDragActive ? 'Drop files here' : 'Drag & drop files here'}
               </p>
               <p className="text-sm text-base-content/60">
-                or <span className="text-primary cursor-pointer">browse files</span> to upload
+                or <span 
+                  className="text-primary cursor-pointer hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                >browse files</span> to upload
               </p>
               <p className="text-xs text-base-content/40 mt-2">
                 Supports images, PDFs, documents and more
+                {uploadLimits && (
+                  <span className="block mt-1">
+                    Max file size: {uploadLimits.upload_size_limit_formatted}
+                  </span>
+                )}
               </p>
             </div>
           </div>
