@@ -12,7 +12,7 @@ import {
   useDeleteDocumentMutation,
   type FolderContentsItem
 } from '@/lib/store/api/api';
-import { useDuplicateDocumentMutation } from '@/lib/store/api/documentsApi';
+import { useDuplicateDocumentMutation, useToggleFavoriteMutation, useBulkToggleFavoriteMutation } from '@/lib/store/api/documentsApi';
 import {
   setViewMode,
   setCurrentFolder,
@@ -72,6 +72,8 @@ export default function DocumentsPage() {
   const [deleteFolder] = useDeleteFolderMutation();
   const [deleteDocument] = useDeleteDocumentMutation();
   const [duplicateDocument, { isLoading: isDuplicating }] = useDuplicateDocumentMutation();
+  const [toggleFavorite] = useToggleFavoriteMutation();
+  const [bulkToggleFavorite] = useBulkToggleFavoriteMutation();
   
   const [searchFolders, { data: searchResults, isLoading: isSearching }] = useLazySearchFoldersQuery();
 
@@ -234,6 +236,20 @@ export default function DocumentsPage() {
     }
   };
 
+  const handleOpenClick = () => {
+    if (selectedItems.length === 1) {
+      const selectedItem = items.find(item => item.id === selectedItems[0]);
+      if (selectedItem) {
+        if (selectedItem.type === 'folder') {
+          dispatch(setCurrentFolder(selectedItem.id));
+          dispatch(clearSelection());
+        } else {
+          router.push(`/dashboard/documents/${selectedItem.id}/edit`);
+        }
+      }
+    }
+  };
+
   const handleShareCreated = (shareData: DocumentShare) => {
     console.log('Share created:', shareData);
     // TODO: Show success toast notification
@@ -265,6 +281,49 @@ export default function DocumentsPage() {
       // TODO: Show error toast notification
       setDuplicateConfirmId(null);
       setDuplicateConfirmName('');
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (selectedItems.length === 0) return;
+    
+    try {
+      const documentIds = selectedItems.filter(id => {
+        const item = items.find(item => item.id === id);
+        return item?.type === 'document';
+      });
+      
+      if (documentIds.length === 0) return;
+      
+      const selectedDocuments = items.filter(item => 
+        documentIds.includes(item.id) && item.type === 'document'
+      );
+      
+      // Check if all documents have the same favorite status
+      const firstDocFavorite = selectedDocuments[0]?.favorite || false;
+      const allSameStatus = selectedDocuments.every(doc => (doc.favorite || false) === firstDocFavorite);
+      
+      // Only proceed if all documents have the same status
+      if (!allSameStatus) return;
+      
+      if (documentIds.length === 1) {
+        // Single document toggle
+        await toggleFavorite(documentIds[0]).unwrap();
+      } else {
+        // Bulk toggle - since all documents have same status, toggle to opposite
+        const shouldFavorite = !firstDocFavorite;
+        
+        await bulkToggleFavorite({
+          document_ids: documentIds,
+          is_favorite: shouldFavorite
+        }).unwrap();
+      }
+      
+      dispatch(clearSelection());
+      // TODO: Show success toast notification
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      // TODO: Show error toast notification
     }
   };
 
@@ -410,6 +469,19 @@ export default function DocumentsPage() {
             </span>
             <div className="flex gap-2">
               <button 
+                onClick={handleOpenClick}
+                className="btn btn-sm btn-primary"
+                disabled={selectedItems.length !== 1}
+                title={selectedItems.length !== 1 ? "Select exactly one item to open" : 
+                       items.find(item => item.id === selectedItems[0])?.type === 'folder' ? "Open folder" : 
+                       "Open document"}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Open
+              </button>
+              <button 
                 onClick={handleShareClick}
                 className="btn btn-sm btn-ghost"
                 disabled={selectedItems.length !== 1 || (selectedItems.length === 1 && items.find(item => item.id === selectedItems[0])?.type !== 'document')}
@@ -421,6 +493,59 @@ export default function DocumentsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15V3m0 0l-4 4m4-4l4 4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17" />
                 </svg>
                 Share
+              </button>
+              <button 
+                onClick={handleToggleFavorite}
+                className="btn btn-sm btn-ghost"
+                disabled={(() => {
+                  const documentIds = selectedItems.filter(id => items.find(item => item.id === id)?.type === 'document');
+                  if (documentIds.length === 0) return true;
+                  
+                  const selectedDocuments = items.filter(item => documentIds.includes(item.id));
+                  if (selectedDocuments.length === 0) return true;
+                  
+                  // Check if all documents have the same favorite status
+                  const firstDocFavorite = selectedDocuments[0]?.favorite || false;
+                  const allSameStatus = selectedDocuments.every(doc => (doc.favorite || false) === firstDocFavorite);
+                  
+                  return !allSameStatus;
+                })()}
+                title={(() => {
+                  const documentIds = selectedItems.filter(id => items.find(item => item.id === id)?.type === 'document');
+                  if (documentIds.length === 0) return "Select at least one document";
+                  
+                  const selectedDocuments = items.filter(item => documentIds.includes(item.id));
+                  if (selectedDocuments.length === 0) return "Select at least one document";
+                  
+                  // Check if all documents have the same favorite status
+                  const firstDocFavorite = selectedDocuments[0]?.favorite || false;
+                  const allSameStatus = selectedDocuments.every(doc => (doc.favorite || false) === firstDocFavorite);
+                  
+                  if (!allSameStatus) return "Selected documents have mixed favorite status";
+                  
+                  return firstDocFavorite ? "Remove from favorites" : "Add to favorites";
+                })()}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                {
+                  (() => {
+                    const documentIds = selectedItems.filter(id => items.find(item => item.id === id)?.type === 'document');
+                    if (documentIds.length === 0) return "Favorite";
+                    
+                    const selectedDocuments = items.filter(item => documentIds.includes(item.id));
+                    if (selectedDocuments.length === 0) return "Favorite";
+                    
+                    // Check if all documents have the same favorite status
+                    const firstDocFavorite = selectedDocuments[0]?.favorite || false;
+                    const allSameStatus = selectedDocuments.every(doc => (doc.favorite || false) === firstDocFavorite);
+                    
+                    if (!allSameStatus) return "Favorite";
+                    
+                    return firstDocFavorite ? "Unfavorite" : "Favorite";
+                  })()
+                }
               </button>
               <button 
                 onClick={handleDuplicateClick}

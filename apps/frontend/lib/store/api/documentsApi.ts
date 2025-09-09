@@ -137,13 +137,25 @@ export const documentsApi = api.injectEndpoints({
     
     toggleFavorite: builder.mutation<{ data: Document; message: string }, string>({
       query: (id) => ({
-        url: `documents/${id}/favorite`,
+        url: `documents/${id}/toggle-favorite`,
         method: 'POST',
       }),
       invalidatesTags: (result, error, id) => [
         { type: 'Document', id },
         'FolderContents',
       ],
+    }),
+
+    bulkToggleFavorite: builder.mutation<
+      { data: { updated_count: number; is_favorite: boolean; document_ids: string[] }; message: string },
+      { document_ids: string[]; is_favorite: boolean }
+    >({
+      query: (data) => ({
+        url: 'documents/bulk-toggle-favorite',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Document', 'FolderContents'],
     }),
     
     toggleArchive: builder.mutation<{ data: Document; message: string }, string>({
@@ -278,6 +290,7 @@ export const {
   useDeleteDocumentMutation,
   useDuplicateDocumentMutation,
   useToggleFavoriteMutation,
+  useBulkToggleFavoriteMutation,
   useToggleArchiveMutation,
   useRestoreDocumentMutation,
   useMoveDocumentMutation,

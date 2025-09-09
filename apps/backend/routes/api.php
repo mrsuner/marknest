@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DocumentController;
+use App\Http\Controllers\Api\DocumentActionController;
 use App\Http\Controllers\Api\DocumentShareController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FileController;
@@ -45,6 +46,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('{document}', [DocumentController::class, 'update']);
         Route::delete('{document}', [DocumentController::class, 'destroy']);
         Route::post('{document}/duplicate', [DocumentController::class, 'duplicate']);
+        
+        // Document actions
+        Route::post('{document}/toggle-favorite', [DocumentActionController::class, 'toggleFavorite']);
+        Route::post('{document}/toggle-archive', [DocumentActionController::class, 'toggleArchive']);
+        Route::post('bulk-toggle-favorite', [DocumentActionController::class, 'bulkToggleFavorite']);
+        Route::post('bulk-toggle-archive', [DocumentActionController::class, 'bulkToggleArchive']);
         
         // Version management
         Route::get('{document}/versions', [DocumentController::class, 'getVersions']);
