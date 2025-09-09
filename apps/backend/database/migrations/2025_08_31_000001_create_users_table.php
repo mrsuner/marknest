@@ -27,7 +27,7 @@ return new class extends Migration
             $table->boolean('can_password_protect')->default(false);
             $table->rememberToken();
             $table->timestamps();
-            
+
             // Indexes
             $table->index('email', 'idx_users_email');
             $table->index('plan', 'idx_users_plan');

@@ -30,7 +30,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->text('description')->nullable();
             $table->timestamps();
-            
+
             // Indexes
             $table->index('document_id', 'idx_document_shares_document_id');
             $table->index('user_id', 'idx_document_shares_user_id');

@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -14,7 +13,9 @@ class OtpMail extends Mailable
     use Queueable, SerializesModels;
 
     public string $otp;
+
     public string $magicLink;
+
     public string $email;
 
     /**
@@ -25,7 +26,7 @@ class OtpMail extends Mailable
         $this->otp = $otp;
         $this->email = $email;
         $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
-        $this->magicLink = $frontendUrl . '/verify?otp=' . $otp;
+        $this->magicLink = $frontendUrl.'/verify?otp='.$otp;
     }
 
     /**

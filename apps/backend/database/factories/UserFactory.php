@@ -24,7 +24,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         $plan = fake()->randomElement(['free', 'pro', 'enterprise']);
-        
+
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),

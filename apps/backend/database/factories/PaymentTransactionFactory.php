@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
 use App\Models\Subscription;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -26,8 +26,8 @@ class PaymentTransactionFactory extends Factory
         return [
             'user_id' => User::factory(),
             'subscription_id' => fake()->optional()->passthrough(Subscription::factory()),
-            'transaction_id' => 'pi_' . fake()->regexify('[A-Za-z0-9]{24}'),
-            'stripe_payment_method_id' => 'pm_' . fake()->regexify('[A-Za-z0-9]{24}'),
+            'transaction_id' => 'pi_'.fake()->regexify('[A-Za-z0-9]{24}'),
+            'stripe_payment_method_id' => 'pm_'.fake()->regexify('[A-Za-z0-9]{24}'),
             'type' => fake()->randomElement(['payment', 'refund', 'subscription', 'invoice']),
             'status' => $status,
             'amount' => $amount,

@@ -32,7 +32,7 @@ return new class extends Migration
             $table->json('limits')->nullable(); // Storage, documents, etc.
             $table->json('metadata')->nullable();
             $table->timestamps();
-            
+
             // Indexes
             $table->index('user_id', 'idx_subscriptions_user_id');
             $table->index('stripe_subscription_id', 'idx_subscriptions_stripe_subscription_id');
@@ -42,7 +42,7 @@ return new class extends Migration
             $table->index('current_period_end', 'idx_subscriptions_current_period_end');
             $table->index(['user_id', 'status'], 'idx_subscriptions_user_status');
             $table->unique('user_id', 'unq_subscriptions_user_id');
-            
+
         });
     }
 

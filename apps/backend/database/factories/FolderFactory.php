@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
 use App\Models\Folder;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -20,15 +20,15 @@ class FolderFactory extends Factory
     public function definition(): array
     {
         $name = fake()->words(rand(1, 3), true);
-        $slug = Str::slug($name) . '-' . fake()->unique()->numberBetween(1, 9999);
-        
+        $slug = Str::slug($name).'-'.fake()->unique()->numberBetween(1, 9999);
+
         return [
             'name' => $name,
             'slug' => $slug,
             'description' => fake()->optional()->sentence(),
             'user_id' => User::factory(),
             'parent_id' => null,
-            'path' => '/' . $slug,
+            'path' => '/'.$slug,
             'depth' => 0,
             'order' => fake()->numberBetween(0, 100),
             'color' => fake()->optional()->hexColor(),
@@ -39,12 +39,13 @@ class FolderFactory extends Factory
     public function withParent(Folder $parent): static
     {
         return $this->state(function (array $attributes) use ($parent) {
-            $slug = Str::slug($attributes['name']) . '-' . fake()->unique()->numberBetween(1, 9999);
+            $slug = Str::slug($attributes['name']).'-'.fake()->unique()->numberBetween(1, 9999);
+
             return [
                 'slug' => $slug,
                 'parent_id' => $parent->id,
                 'user_id' => $parent->user_id,
-                'path' => $parent->path . '/' . $slug,
+                'path' => $parent->path.'/'.$slug,
                 'depth' => $parent->depth + 1,
             ];
         });
@@ -55,7 +56,7 @@ class FolderFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'parent_id' => null,
             'depth' => 0,
-            'path' => '/' . Str::slug($attributes['name']),
+            'path' => '/'.Str::slug($attributes['name']),
         ]);
     }
 }

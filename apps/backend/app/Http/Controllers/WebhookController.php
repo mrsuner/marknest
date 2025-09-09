@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Laravel\Cashier\Http\Controllers\WebhookController as CashierWebhookController;
-use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Laravel\Cashier\Http\Controllers\WebhookController as CashierWebhookController;
 
 class WebhookController extends CashierWebhookController
 {
@@ -15,14 +14,14 @@ class WebhookController extends CashierWebhookController
     protected function handleCustomerSubscriptionUpdated(array $payload): void
     {
         parent::handleCustomerSubscriptionUpdated($payload);
-        
+
         $subscription = $payload['data']['object'];
         $user = $this->getUserByStripeId($subscription['customer']);
-        
+
         if ($user) {
             // Update user's plan based on the subscription status
             $this->updateUserPlan($user, $subscription);
-            
+
             // Log subscription update
             Log::info('Subscription updated for user', [
                 'user_id' => $user->id,
@@ -31,17 +30,17 @@ class WebhookController extends CashierWebhookController
             ]);
         }
     }
-    
+
     /**
      * Handle customer subscription deleted event
      */
     protected function handleCustomerSubscriptionDeleted(array $payload): void
     {
         parent::handleCustomerSubscriptionDeleted($payload);
-        
+
         $subscription = $payload['data']['object'];
         $user = $this->getUserByStripeId($subscription['customer']);
-        
+
         if ($user) {
             // Reset user to free plan
             $user->update([
@@ -52,14 +51,14 @@ class WebhookController extends CashierWebhookController
                 'version_history_days' => config('subscriptions.plans.free.limits.version_history_days'),
                 'can_password_protect' => false,
             ]);
-            
+
             Log::info('Subscription cancelled for user', [
                 'user_id' => $user->id,
                 'stripe_subscription_id' => $subscription['id'],
             ]);
         }
     }
-    
+
     /**
      * Handle payment succeeded event
      */
@@ -67,7 +66,7 @@ class WebhookController extends CashierWebhookController
     {
         $invoice = $payload['data']['object'];
         $user = $this->getUserByStripeId($invoice['customer']);
-        
+
         if ($user) {
             // Log successful payment
             Log::info('Payment succeeded for user', [
@@ -76,14 +75,14 @@ class WebhookController extends CashierWebhookController
                 'amount' => $invoice['amount_paid'],
                 'currency' => $invoice['currency'],
             ]);
-            
+
             // You can add custom logic here, such as:
             // - Sending a payment confirmation email
             // - Recording the transaction in a custom table
             // - Updating usage quotas
         }
     }
-    
+
     /**
      * Handle payment failed event
      */
@@ -91,7 +90,7 @@ class WebhookController extends CashierWebhookController
     {
         $invoice = $payload['data']['object'];
         $user = $this->getUserByStripeId($invoice['customer']);
-        
+
         if ($user) {
             // Log failed payment
             Log::warning('Payment failed for user', [
@@ -99,14 +98,14 @@ class WebhookController extends CashierWebhookController
                 'invoice_id' => $invoice['id'],
                 'attempt_count' => $invoice['attempt_count'],
             ]);
-            
+
             // You can add custom logic here, such as:
             // - Sending a payment failure notification
             // - Restricting user access after multiple failures
             // - Creating a support ticket
         }
     }
-    
+
     /**
      * Handle customer updated event
      */
@@ -114,7 +113,7 @@ class WebhookController extends CashierWebhookController
     {
         $customer = $payload['data']['object'];
         $user = $this->getUserByStripeId($customer['id']);
-        
+
         if ($user) {
             // Update user's payment method info if changed
             if (isset($customer['invoice_settings']['default_payment_method'])) {
@@ -126,7 +125,7 @@ class WebhookController extends CashierWebhookController
             }
         }
     }
-    
+
     /**
      * Handle subscription trial ending soon
      */
@@ -134,20 +133,20 @@ class WebhookController extends CashierWebhookController
     {
         $subscription = $payload['data']['object'];
         $user = $this->getUserByStripeId($subscription['customer']);
-        
+
         if ($user) {
             // Log trial ending soon
             Log::info('Trial ending soon for user', [
                 'user_id' => $user->id,
                 'trial_end' => $subscription['trial_end'],
             ]);
-            
+
             // You can add custom logic here, such as:
             // - Sending a trial ending reminder email
             // - Offering a discount for immediate subscription
         }
     }
-    
+
     /**
      * Get user by Stripe customer ID
      */
@@ -155,7 +154,7 @@ class WebhookController extends CashierWebhookController
     {
         return User::where('stripe_id', $stripeId)->first();
     }
-    
+
     /**
      * Update user's plan based on subscription
      */
@@ -168,14 +167,14 @@ class WebhookController extends CashierWebhookController
             config('subscriptions.plans.enterprise.stripe_price_monthly') => 'enterprise',
             config('subscriptions.plans.enterprise.stripe_price_yearly') => 'enterprise',
         ];
-        
+
         $priceId = $subscription['items']['data'][0]['price']['id'] ?? null;
         $plan = $priceIdToPlan[$priceId] ?? 'free';
-        
+
         if ($subscription['status'] === 'active' || $subscription['status'] === 'trialing') {
             // Update to the subscribed plan
             $limits = config("subscriptions.plans.{$plan}.limits");
-            
+
             $user->update([
                 'plan' => $plan,
                 'document_limit' => $limits['document_limit'],

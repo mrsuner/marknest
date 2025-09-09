@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Folder;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class FolderSeeder extends Seeder
@@ -22,7 +22,7 @@ class FolderSeeder extends Seeder
             // Create subfolders
             $rootFolders->each(function ($rootFolder) {
                 $subfolders = Folder::factory(2)->withParent($rootFolder)->create();
-                
+
                 // Create nested subfolders
                 $subfolders->each(function ($subfolder) {
                     Folder::factory(1)->withParent($subfolder)->create();

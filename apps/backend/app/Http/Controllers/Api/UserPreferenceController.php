@@ -16,7 +16,7 @@ class UserPreferenceController extends Controller
         $user = Auth::user();
         $preferences = UserPreference::where('user_id', $user->id)->first();
 
-        if (!$preferences) {
+        if (! $preferences) {
             $preferences = UserPreference::create([
                 'user_id' => $user->id,
                 'theme' => 'paperlight',
@@ -42,7 +42,7 @@ class UserPreferenceController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $preferences
+            'data' => $preferences,
         ]);
     }
 
@@ -79,7 +79,7 @@ class UserPreferenceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Preferences updated successfully',
-            'data' => $preferences
+            'data' => $preferences,
         ]);
     }
 
@@ -116,7 +116,7 @@ class UserPreferenceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Preferences reset to default',
-            'data' => $preferences
+            'data' => $preferences,
         ]);
     }
 }

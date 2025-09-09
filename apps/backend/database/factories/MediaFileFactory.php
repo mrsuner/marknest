@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\User;
-use App\Models\Document;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -21,11 +20,11 @@ class MediaFileFactory extends Factory
     {
         $mimeType = fake()->randomElement([
             'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-            'application/pdf', 'text/plain', 'application/zip'
+            'application/pdf', 'text/plain', 'application/zip',
         ]);
         $extension = $this->getExtensionFromMimeType($mimeType);
-        $filename = Str::random(32) . '.' . $extension;
-        $originalName = fake()->words(2, true) . '.' . $extension;
+        $filename = Str::random(32).'.'.$extension;
+        $originalName = fake()->words(2, true).'.'.$extension;
         $size = fake()->numberBetween(1000, 10000000);
 
         return [
@@ -36,11 +35,11 @@ class MediaFileFactory extends Factory
             'file_extension' => $extension,
             'size' => $size,
             'disk' => 'public',
-            'path' => 'uploads/' . $filename,
+            'path' => 'uploads/'.$filename,
             'alt_text' => str_starts_with($mimeType, 'image/') ? fake()->sentence() : null,
             'description' => fake()->optional()->sentence(),
             'metadata' => $this->getMetadataForMimeType($mimeType),
-            'hash' => hash('sha256', $filename . time()),
+            'hash' => hash('sha256', $filename.time()),
             'is_optimized' => str_starts_with($mimeType, 'image/') ? fake()->boolean() : false,
             'is_public' => fake()->boolean(30),
             'download_count' => fake()->numberBetween(0, 100),

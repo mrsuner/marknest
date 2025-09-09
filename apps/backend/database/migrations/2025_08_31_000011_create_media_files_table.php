@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('media_files', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
-        
+
             $table->string('original_name');
             $table->string('filename'); // Generated unique filename
             $table->string('mime_type', 100);
@@ -31,14 +31,14 @@ return new class extends Migration
             $table->integer('download_count')->default(0);
             $table->timestamp('last_accessed_at')->nullable();
             $table->timestamps();
-            
+
             // Indexes
             $table->index('user_id', 'idx_media_files_user_id');
             $table->index('filename', 'idx_media_files_filename');
             $table->index('mime_type', 'idx_media_files_mime_type');
             $table->index('hash', 'idx_media_files_hash');
             $table->index('is_public', 'idx_media_files_is_public');
-            $table->index('created_at', 'idx_media_files_created_at');            
+            $table->index('created_at', 'idx_media_files_created_at');
         });
     }
 

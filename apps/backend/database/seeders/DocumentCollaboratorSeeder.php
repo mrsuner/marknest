@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Document;
 use App\Models\DocumentCollaborator;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DocumentCollaboratorSeeder extends Seeder
@@ -24,9 +24,9 @@ class DocumentCollaboratorSeeder extends Seeder
                 $collaborators = $otherUsers->random(rand(1, 3));
 
                 $collaborators->each(function ($collaborator) use ($document) {
-                    if (!DocumentCollaborator::where('document_id', $document->id)
-                                            ->where('user_id', $collaborator->id)
-                                            ->exists()) {
+                    if (! DocumentCollaborator::where('document_id', $document->id)
+                        ->where('user_id', $collaborator->id)
+                        ->exists()) {
                         DocumentCollaborator::factory()->create([
                             'document_id' => $document->id,
                             'user_id' => $collaborator->id,
@@ -46,9 +46,9 @@ class DocumentCollaboratorSeeder extends Seeder
         if ($adminUser && $testUser) {
             $adminDocuments = $adminUser->documents()->limit(2)->get();
             $adminDocuments->each(function ($document) use ($testUser, $adminUser) {
-                if (!DocumentCollaborator::where('document_id', $document->id)
-                                        ->where('user_id', $testUser->id)
-                                        ->exists()) {
+                if (! DocumentCollaborator::where('document_id', $document->id)
+                    ->where('user_id', $testUser->id)
+                    ->exists()) {
                     DocumentCollaborator::factory()->editor()->create([
                         'document_id' => $document->id,
                         'user_id' => $testUser->id,
@@ -61,9 +61,9 @@ class DocumentCollaboratorSeeder extends Seeder
         if ($demoUser && $testUser) {
             $demoDocuments = $demoUser->documents()->limit(1)->get();
             $demoDocuments->each(function ($document) use ($testUser, $demoUser) {
-                if (!DocumentCollaborator::where('document_id', $document->id)
-                                        ->where('user_id', $testUser->id)
-                                        ->exists()) {
+                if (! DocumentCollaborator::where('document_id', $document->id)
+                    ->where('user_id', $testUser->id)
+                    ->exists()) {
                     DocumentCollaborator::factory()->viewer()->create([
                         'document_id' => $document->id,
                         'user_id' => $testUser->id,

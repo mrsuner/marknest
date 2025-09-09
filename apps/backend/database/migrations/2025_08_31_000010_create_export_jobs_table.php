@@ -28,7 +28,7 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
-            
+
             // Indexes
             $table->index('user_id', 'idx_export_jobs_user_id');
             $table->index('document_id', 'idx_export_jobs_document_id');
@@ -36,7 +36,7 @@ return new class extends Migration
             $table->index('status', 'idx_export_jobs_status');
             $table->index('created_at', 'idx_export_jobs_created_at');
             $table->index(['user_id', 'status'], 'idx_export_jobs_user_status');
-            
+
         });
     }
 

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Document;
 use App\Models\Folder;
+use App\Models\User;
 use App\Models\UserActivity;
 use Illuminate\Database\Seeder;
 
@@ -69,7 +69,7 @@ class UserActivitySeeder extends Seeder
                     'activity_type' => 'share_create',
                     'entity_type' => 'share',
                     'entity_id' => $share->id,
-                    'description' => "Created share link for document",
+                    'description' => 'Created share link for document',
                     'created_at' => $share->created_at,
                 ]);
             });

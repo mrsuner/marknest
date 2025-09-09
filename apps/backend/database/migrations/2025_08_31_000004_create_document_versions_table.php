@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('operation', 20)->default('update'); // create, update, restore
             $table->boolean('is_auto_save')->default(false);
             $table->timestamp('created_at')->nullable();
-            
+
             // Indexes
             $table->index('document_id', 'idx_document_versions_document_id');
             $table->index('user_id', 'idx_document_versions_user_id');

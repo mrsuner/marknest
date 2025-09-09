@@ -15,7 +15,7 @@ class DocumentShareSeeder extends Seeder
     {
         // Create shares for published documents
         $publishedDocuments = Document::where('status', 'published')->get();
-        
+
         $publishedDocuments->each(function ($document) {
             // Only create shares for users who can share publicly
             if ($document->user->can_share_public && rand(1, 100) <= 40) { // 40% chance

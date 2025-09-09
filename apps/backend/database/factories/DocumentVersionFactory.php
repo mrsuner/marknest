@@ -30,7 +30,7 @@ class DocumentVersionFactory extends Factory
             'version_number' => fake()->numberBetween(1, 10),
             'title' => rtrim($title, '.'),
             'content' => $content,
-            'rendered_html' => "<p>" . str_replace("\n\n", "</p><p>", $content) . "</p>",
+            'rendered_html' => '<p>'.str_replace("\n\n", '</p><p>', $content).'</p>',
             'size' => $size,
             'word_count' => $wordCount,
             'character_count' => $characterCount,

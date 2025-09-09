@@ -21,13 +21,13 @@ return new class extends Migration
             $table->boolean('can_delete')->default(false);
             $table->timestamp('last_accessed_at')->nullable();
             $table->timestamps();
-            
+
             // Indexes
             $table->index('document_id', 'idx_document_collaborators_document_id');
             $table->index('user_id', 'idx_document_collaborators_user_id');
             $table->index('permission', 'idx_document_collaborators_permission');
             $table->unique(['document_id', 'user_id'], 'unq_document_collaborators_doc_user');
-            
+
         });
     }
 

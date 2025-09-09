@@ -9,7 +9,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 
 class DocumentShareController extends Controller
 {
@@ -174,7 +173,7 @@ class DocumentShareController extends Controller
     public function toggle(string $id): JsonResponse
     {
         $share = DocumentShare::where('user_id', Auth::id())->findOrFail($id);
-        $share->update(['is_active' => !$share->is_active]);
+        $share->update(['is_active' => ! $share->is_active]);
         $share->load(['document', 'user']);
 
         return response()->json($share);
@@ -183,7 +182,7 @@ class DocumentShareController extends Controller
     public function analytics(string $id): JsonResponse
     {
         $share = DocumentShare::where('user_id', Auth::id())->findOrFail($id);
-        
+
         $analytics = [
             'total_views' => $share->view_count,
             'remaining_views' => $share->max_views ? ($share->max_views - $share->view_count) : null,
@@ -208,21 +207,21 @@ class DocumentShareController extends Controller
         // Check if password is required
         if ($share->access_level === 'password' && $share->password) {
             $providedPassword = $request->query('password') ?? $request->input('password');
-            
-            if (!$providedPassword) {
+
+            if (! $providedPassword) {
                 return response()->json(['message' => 'Password required'], 401);
             }
 
-            if (!password_verify($providedPassword, $share->password)) {
+            if (! password_verify($providedPassword, $share->password)) {
                 return response()->json(['message' => 'Invalid password'], 403);
             }
         }
 
         // Check email list restriction
-        if ($share->access_level === 'email_list' && !empty($share->allowed_emails)) {
+        if ($share->access_level === 'email_list' && ! empty($share->allowed_emails)) {
             $userEmail = $request->query('email') ?? $request->input('email');
-            
-            if (!$userEmail || !in_array($userEmail, $share->allowed_emails)) {
+
+            if (! $userEmail || ! in_array($userEmail, $share->allowed_emails)) {
                 return response()->json(['message' => 'Access restricted to specific emails'], 403);
             }
         }
@@ -265,13 +264,13 @@ class DocumentShareController extends Controller
     private function generateShortUrl(string $token): string
     {
         // In production, you might want to use a proper URL shortener
-        return  '/s/' . $token;
+        return '/s/'.$token;
     }
 
     private function logAccess(DocumentShare $share): void
     {
         $share->increment('view_count');
-        
+
         $accessLog = $share->access_log ?? [];
         $accessLog[] = [
             'timestamp' => now()->toISOString(),
@@ -290,7 +289,8 @@ class DocumentShareController extends Controller
     private function getLastAccessedAt(DocumentShare $share): ?string
     {
         $accessLog = $share->access_log ?? [];
-        return !empty($accessLog) ? end($accessLog)['timestamp'] : null;
+
+        return ! empty($accessLog) ? end($accessLog)['timestamp'] : null;
     }
 
     public function findActiveShareByDocument(string $documentId): JsonResponse
@@ -301,7 +301,7 @@ class DocumentShareController extends Controller
             ->notExpired()
             ->first();
 
-        if (!$share) {
+        if (! $share) {
             return response()->json(['message' => 'No active public share found'], 404);
         }
 

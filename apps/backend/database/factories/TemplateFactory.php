@@ -20,7 +20,7 @@ class TemplateFactory extends Factory
     {
         $name = fake()->words(rand(2, 4), true);
         $category = fake()->randomElement(['personal', 'business', 'academic', 'technical']);
-        
+
         return [
             'name' => $name,
             'slug' => Str::slug($name),

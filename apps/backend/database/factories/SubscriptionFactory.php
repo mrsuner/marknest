@@ -19,12 +19,12 @@ class SubscriptionFactory extends Factory
     {
         $plan = fake()->randomElement(['free', 'pro', 'enterprise']);
         $status = fake()->randomElement(['active', 'canceled', 'past_due', 'incomplete']);
-        
+
         return [
             'user_id' => User::factory(),
-            'stripe_subscription_id' => 'sub_' . fake()->regexify('[A-Za-z0-9]{24}'),
-            'stripe_customer_id' => 'cus_' . fake()->regexify('[A-Za-z0-9]{14}'),
-            'stripe_price_id' => 'price_' . fake()->regexify('[A-Za-z0-9]{24}'),
+            'stripe_subscription_id' => 'sub_'.fake()->regexify('[A-Za-z0-9]{24}'),
+            'stripe_customer_id' => 'cus_'.fake()->regexify('[A-Za-z0-9]{14}'),
+            'stripe_price_id' => 'price_'.fake()->regexify('[A-Za-z0-9]{24}'),
             'plan' => $plan,
             'status' => $status,
             'amount' => $this->getAmountForPlan($plan),

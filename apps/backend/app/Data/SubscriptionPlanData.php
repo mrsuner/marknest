@@ -2,8 +2,8 @@
 
 namespace App\Data;
 
-use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Attributes\MapName;
+use Spatie\LaravelData\Data;
 
 class SubscriptionPlanData extends Data
 {

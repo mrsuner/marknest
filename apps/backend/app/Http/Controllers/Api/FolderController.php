@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Folder;
 use App\Models\Document;
-use Illuminate\Http\Request;
+use App\Models\Folder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class FolderController extends Controller
 {
@@ -20,7 +19,7 @@ class FolderController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Get root folders with nested children and document counts
         $folders = Folder::where('user_id', $user->id)
             ->whereNull('parent_id')
@@ -32,7 +31,7 @@ class FolderController extends Controller
 
         return response()->json([
             'data' => $folders,
-            'message' => 'Folders retrieved successfully'
+            'message' => 'Folders retrieved successfully',
         ]);
     }
 
@@ -43,7 +42,7 @@ class FolderController extends Controller
     public function show(string $folderId): JsonResponse
     {
         $user = Auth::user();
-        
+
         $folder = Folder::where('user_id', $user->id)
             ->where('id', $folderId)
             ->with(['children', 'documents', 'parent'])
@@ -58,7 +57,7 @@ class FolderController extends Controller
                 'folder' => $folder,
                 'breadcrumbs' => $breadcrumbs,
             ],
-            'message' => 'Folder retrieved successfully'
+            'message' => 'Folder retrieved successfully',
         ]);
     }
 
@@ -66,7 +65,7 @@ class FolderController extends Controller
      * Get folder contents (children folders and documents)
      * Used for folder navigation in the UI
      */
-    public function getContents(Request $request, string $folderId = null): JsonResponse
+    public function getContents(Request $request, ?string $folderId = null): JsonResponse
     {
         $user = Auth::user();
         $searchQuery = $request->get('search', '');
@@ -86,18 +85,18 @@ class FolderController extends Controller
             $parentFolder = Folder::where('user_id', $user->id)
                 ->where('id', $folderId)
                 ->firstOrFail();
-                
+
             $foldersQuery->where('parent_id', $folderId);
             $documentsQuery->where('folder_id', $folderId);
-            
+
             $breadcrumbs = $this->getBreadcrumbPath($parentFolder);
         } else {
             // Get root level contents
             $foldersQuery->whereNull('parent_id');
             $documentsQuery->whereNull('folder_id');
-            
+
             $breadcrumbs = [
-                ['id' => 'root', 'name' => 'My Drive', 'path' => '/']
+                ['id' => 'root', 'name' => 'My Drive', 'path' => '/'],
             ];
         }
 
@@ -116,7 +115,7 @@ class FolderController extends Controller
 
         // Combine and format items for frontend
         $items = collect();
-        
+
         // Add folders
         foreach ($folders as $folder) {
             $items->push([
@@ -129,7 +128,7 @@ class FolderController extends Controller
                 'icon' => $folder->icon,
             ]);
         }
-        
+
         // Add documents
         foreach ($documents as $document) {
             $items->push([
@@ -149,7 +148,7 @@ class FolderController extends Controller
                 'breadcrumbs' => $breadcrumbs,
                 'currentFolder' => $folderId ? $parentFolder : null,
             ],
-            'message' => 'Folder contents retrieved successfully'
+            'message' => 'Folder contents retrieved successfully',
         ]);
     }
 
@@ -173,12 +172,12 @@ class FolderController extends Controller
             $parentFolder = Folder::where('user_id', $user->id)
                 ->where('id', $validated['parent_id'])
                 ->firstOrFail();
-                
+
             $depth = $parentFolder->depth + 1;
-            $path = $parentFolder->path . '/' . Str::slug($validated['name']);
+            $path = $parentFolder->path.'/'.Str::slug($validated['name']);
         } else {
             $depth = 0;
-            $path = '/' . Str::slug($validated['name']);
+            $path = '/'.Str::slug($validated['name']);
         }
 
         // Check for duplicate names at same level
@@ -189,7 +188,7 @@ class FolderController extends Controller
 
         if ($existingFolder) {
             return response()->json([
-                'message' => 'A folder with this name already exists at this location'
+                'message' => 'A folder with this name already exists at this location',
             ], 422);
         }
 
@@ -208,7 +207,7 @@ class FolderController extends Controller
 
         return response()->json([
             'data' => $folder,
-            'message' => 'Folder created successfully'
+            'message' => 'Folder created successfully',
         ], 201);
     }
 
@@ -225,7 +224,7 @@ class FolderController extends Controller
         ]);
 
         $user = Auth::user();
-        
+
         $folder = Folder::where('user_id', $user->id)
             ->where('id', $folderId)
             ->firstOrFail();
@@ -240,12 +239,12 @@ class FolderController extends Controller
 
             if ($existingFolder) {
                 return response()->json([
-                    'message' => 'A folder with this name already exists at this location'
+                    'message' => 'A folder with this name already exists at this location',
                 ], 422);
             }
 
             $validated['slug'] = Str::slug($validated['name']);
-            
+
             // Update path if name changed
             $this->updateFolderPaths($folder, $validated['name']);
         }
@@ -254,7 +253,7 @@ class FolderController extends Controller
 
         return response()->json([
             'data' => $folder->fresh(),
-            'message' => 'Folder updated successfully'
+            'message' => 'Folder updated successfully',
         ]);
     }
 
@@ -268,7 +267,7 @@ class FolderController extends Controller
         ]);
 
         $user = Auth::user();
-        
+
         $folder = Folder::where('user_id', $user->id)
             ->where('id', $folderId)
             ->firstOrFail();
@@ -281,15 +280,15 @@ class FolderController extends Controller
 
             if ($this->isDescendantOf($newParent, $folder)) {
                 return response()->json([
-                    'message' => 'Cannot move folder into itself or its subfolders'
+                    'message' => 'Cannot move folder into itself or its subfolders',
                 ], 422);
             }
 
             $depth = $newParent->depth + 1;
-            $path = $newParent->path . '/' . $folder->slug;
+            $path = $newParent->path.'/'.$folder->slug;
         } else {
             $depth = 0;
-            $path = '/' . $folder->slug;
+            $path = '/'.$folder->slug;
         }
 
         // Update folder and all descendants
@@ -302,7 +301,7 @@ class FolderController extends Controller
 
         return response()->json([
             'data' => $folder->fresh(),
-            'message' => 'Folder moved successfully'
+            'message' => 'Folder moved successfully',
         ]);
     }
 
@@ -313,7 +312,7 @@ class FolderController extends Controller
     public function destroy(Request $request, string $folderId): JsonResponse
     {
         $user = Auth::user();
-        
+
         $folder = Folder::where('user_id', $user->id)
             ->where('id', $folderId)
             ->withCount(['children', 'documents'])
@@ -322,22 +321,22 @@ class FolderController extends Controller
         // Check if folder has contents
         if ($folder->children_count > 0 || $folder->documents_count > 0) {
             $action = $request->get('action', 'abort');
-            
+
             if ($action === 'abort') {
                 return response()->json([
                     'message' => 'Folder contains items. Please specify action: move_to_parent or delete_all',
                     'data' => [
                         'children_count' => $folder->children_count,
                         'documents_count' => $folder->documents_count,
-                    ]
+                    ],
                 ], 422);
             }
-            
+
             if ($action === 'move_to_parent') {
                 // Move contents to parent folder
                 Folder::where('parent_id', $folderId)
                     ->update(['parent_id' => $folder->parent_id]);
-                    
+
                 Document::where('folder_id', $folderId)
                     ->update(['folder_id' => $folder->parent_id]);
             } elseif ($action === 'delete_all') {
@@ -349,7 +348,7 @@ class FolderController extends Controller
         $folder->delete();
 
         return response()->json([
-            'message' => 'Folder deleted successfully'
+            'message' => 'Folder deleted successfully',
         ]);
     }
 
@@ -359,7 +358,7 @@ class FolderController extends Controller
     public function getBreadcrumbs(string $folderId): JsonResponse
     {
         $user = Auth::user();
-        
+
         $folder = Folder::where('user_id', $user->id)
             ->where('id', $folderId)
             ->firstOrFail();
@@ -368,7 +367,7 @@ class FolderController extends Controller
 
         return response()->json([
             'data' => $breadcrumbs,
-            'message' => 'Breadcrumbs retrieved successfully'
+            'message' => 'Breadcrumbs retrieved successfully',
         ]);
     }
 
@@ -385,7 +384,7 @@ class FolderController extends Controller
         $user = Auth::user();
         $query = $validated['query'];
         $type = $validated['type'] ?? 'all';
-        
+
         $results = collect();
 
         if ($type === 'all' || $type === 'folders') {
@@ -402,7 +401,7 @@ class FolderController extends Controller
                         'modified' => $folder->updated_at->diffForHumans(),
                     ];
                 });
-            
+
             $results = $results->concat($folders);
         }
 
@@ -411,7 +410,7 @@ class FolderController extends Controller
                 ->whereNull('deleted_at')
                 ->where(function ($q) use ($query) {
                     $q->where('title', 'like', "%{$query}%")
-                      ->orWhere('content', 'like', "%{$query}%");
+                        ->orWhere('content', 'like', "%{$query}%");
                 })
                 ->limit(20)
                 ->get()
@@ -425,13 +424,13 @@ class FolderController extends Controller
                         'modified' => $document->updated_at->diffForHumans(),
                     ];
                 });
-            
+
             $results = $results->concat($documents);
         }
 
         return response()->json([
             'data' => $results,
-            'message' => "Found {$results->count()} results"
+            'message' => "Found {$results->count()} results",
         ]);
     }
 
@@ -468,18 +467,18 @@ class FolderController extends Controller
     {
         $newSlug = Str::slug($newName);
         $oldPath = $folder->path;
-        
+
         if ($folder->parent_id) {
             $parent = Folder::find($folder->parent_id);
-            $newPath = $parent->path . '/' . $newSlug;
+            $newPath = $parent->path.'/'.$newSlug;
         } else {
-            $newPath = '/' . $newSlug;
+            $newPath = '/'.$newSlug;
         }
 
         $folder->path = $newPath;
-        
+
         // Update all descendant paths
-        $descendants = Folder::where('path', 'like', $oldPath . '/%')->get();
+        $descendants = Folder::where('path', 'like', $oldPath.'/%')->get();
         foreach ($descendants as $descendant) {
             $descendant->path = str_replace($oldPath, $newPath, $descendant->path);
             $descendant->save();
@@ -491,11 +490,11 @@ class FolderController extends Controller
      */
     private function updateDescendantPaths(Folder $folder): void
     {
-        $descendants = Folder::where('path', 'like', $folder->path . '/%')->get();
-        
+        $descendants = Folder::where('path', 'like', $folder->path.'/%')->get();
+
         foreach ($descendants as $descendant) {
             $relativePath = substr($descendant->path, strlen($folder->path));
-            $descendant->path = $folder->path . $relativePath;
+            $descendant->path = $folder->path.$relativePath;
             $descendant->depth = $folder->depth + substr_count($relativePath, '/');
             $descendant->save();
         }
@@ -507,14 +506,14 @@ class FolderController extends Controller
     private function isDescendantOf(Folder $potentialDescendant, Folder $folder): bool
     {
         $current = $potentialDescendant;
-        
+
         while ($current) {
             if ($current->id === $folder->id) {
                 return true;
             }
             $current = $current->parent;
         }
-        
+
         return false;
     }
 
@@ -525,7 +524,7 @@ class FolderController extends Controller
     {
         // Delete all documents in this folder
         Document::where('folder_id', $folder->id)->delete();
-        
+
         // Recursively delete child folders
         $children = Folder::where('parent_id', $folder->id)->get();
         foreach ($children as $child) {
@@ -541,12 +540,12 @@ class FolderController extends Controller
     {
         $units = ['B', 'KB', 'MB', 'GB'];
         $i = 0;
-        
+
         while ($bytes >= 1024 && $i < count($units) - 1) {
             $bytes /= 1024;
             $i++;
         }
-        
-        return round($bytes, 1) . ' ' . $units[$i];
+
+        return round($bytes, 1).' '.$units[$i];
     }
 }

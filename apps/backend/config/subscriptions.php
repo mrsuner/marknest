@@ -10,7 +10,7 @@ return [
     | These will be used throughout the application to manage user subscriptions.
     |
     */
-    
+
     'plans' => [
         'free' => [
             'name' => 'Free',
@@ -38,7 +38,7 @@ return [
                 'version_history_days' => 7,
             ],
         ],
-        
+
         'pro' => [
             'name' => 'Pro',
             'description' => 'For power users and professionals',
@@ -65,7 +65,7 @@ return [
                 'version_history_days' => 90,
             ],
         ],
-        
+
         'max' => [
             'name' => 'Max',
             'description' => 'For person who who need more storage and features',
@@ -97,37 +97,37 @@ return [
             ],
         ],
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
     | Trial Configuration
     |--------------------------------------------------------------------------
     */
-    
+
     'trial' => [
         'enabled' => true,
         'days' => 14,
         'require_payment_method' => false,
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
     | Stripe Configuration
     |--------------------------------------------------------------------------
     */
-    
+
     'stripe' => [
         'webhook_tolerance' => env('STRIPE_WEBHOOK_TOLERANCE', 300),
         'tax_enabled' => env('STRIPE_TAX_ENABLED', false),
         'tax_rates' => [],
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
     | Grace Period Configuration
     |--------------------------------------------------------------------------
     */
-    
+
     'grace_period' => [
         'days' => 3,
     ],

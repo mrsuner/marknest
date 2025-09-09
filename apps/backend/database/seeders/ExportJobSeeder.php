@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Document;
 use App\Models\ExportJob;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class ExportJobSeeder extends Seeder
@@ -20,7 +20,7 @@ class ExportJobSeeder extends Seeder
         $documents->each(function ($document) {
             if (rand(1, 100) <= 25) { // 25% chance
                 $jobCount = rand(1, 3);
-                
+
                 for ($i = 0; $i < $jobCount; $i++) {
                     ExportJob::factory()->create([
                         'user_id' => $document->user_id,
@@ -40,7 +40,7 @@ class ExportJobSeeder extends Seeder
         $demoUser = User::where('email', 'demo@example.com')->first();
         if ($demoUser) {
             $demoDocuments = $demoUser->documents()->limit(3)->get();
-            
+
             $demoDocuments->each(function ($document) use ($demoUser) {
                 ExportJob::factory()->completed()->create([
                     'user_id' => $demoUser->id,

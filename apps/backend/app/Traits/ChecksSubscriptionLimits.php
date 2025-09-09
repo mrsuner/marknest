@@ -12,6 +12,7 @@ trait ChecksSubscriptionLimits
     protected function getUserUploadSizeLimit(User $user): int
     {
         $plan = config("subscriptions.plans.{$user->plan}", config('subscriptions.plans.free'));
+
         return $plan['limits']['upload_size_limit'] ?? 204800; // Default to 200KB
     }
 
@@ -24,8 +25,9 @@ trait ChecksSubscriptionLimits
         if ($user->storage_limit > 0) {
             return $user->storage_limit;
         }
-        
+
         $plan = config("subscriptions.plans.{$user->plan}", config('subscriptions.plans.free'));
+
         return $plan['limits']['storage_limit'] ?? 104857600; // Default to 100MB
     }
 
@@ -44,6 +46,7 @@ trait ChecksSubscriptionLimits
     {
         $limit = $this->getUserStorageLimit($user);
         $used = $this->getUserStorageUsed($user);
+
         return max(0, $limit - $used);
     }
 
@@ -68,14 +71,16 @@ trait ChecksSubscriptionLimits
      */
     protected function formatBytes(int $bytes, int $decimals = 2): string
     {
-        if ($bytes == 0) return '0 Bytes';
-        
+        if ($bytes == 0) {
+            return '0 Bytes';
+        }
+
         $k = 1024;
         $dm = $decimals < 0 ? 0 : $decimals;
         $sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        
+
         $i = floor(log($bytes) / log($k));
-        
-        return number_format($bytes / pow($k, $i), $dm) . ' ' . $sizes[$i];
+
+        return number_format($bytes / pow($k, $i), $dm).' '.$sizes[$i];
     }
 }

@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
 use App\Models\Folder;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -29,7 +29,7 @@ class DocumentFactory extends Factory
             'title' => rtrim($title, '.'),
             'slug' => Str::slug($title),
             'content' => $content,
-            'rendered_html' => "<p>" . str_replace("\n\n", "</p><p>", $content) . "</p>",
+            'rendered_html' => '<p>'.str_replace("\n\n", '</p><p>', $content).'</p>',
             'user_id' => User::factory(),
             'folder_id' => null,
             'size' => $size,

@@ -27,11 +27,10 @@ return new class extends Migration
 
             // Indexes
             $table->index('user_id', 'idx_folders_user_id');
-            
+
             $table->index('slug', 'idx_folders_slug');
             $table->index('path', 'idx_folders_path');
-            
-            
+
         });
 
         Schema::table('folders', function (Blueprint $table) {

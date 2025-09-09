@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -13,7 +13,7 @@ class MeController extends Controller
     public function me(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         return response()->json([
             'id' => $user->id,
             'name' => $user->name,
@@ -28,29 +28,29 @@ class MeController extends Controller
             'version_history_days' => $user->version_history_days ?? 7,
             'can_share_public' => $user->can_share_public ?? false,
             'can_password_protect' => $user->can_password_protect ?? false,
-            'has_password' => !empty($user->password),
+            'has_password' => ! empty($user->password),
         ]);
     }
-    
+
     public function update(Request $request): JsonResponse
     {
         // Implementation for updating user profile
         // Placeholder for future implementation
         return response()->json(['message' => 'Not implemented yet'], 501);
     }
-    
+
     public function updatePassword(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         $request->validate([
             'new_password' => ['required', 'string', 'min:8'],
             'current_password' => ['nullable', 'string'],
         ]);
 
         // Check if user has an existing password
-        $hasExistingPassword = !empty($user->password);
-        
+        $hasExistingPassword = ! empty($user->password);
+
         // If user has an existing password, require current password
         if ($hasExistingPassword) {
             if (empty($request->current_password)) {
@@ -58,9 +58,9 @@ class MeController extends Controller
                     'current_password' => ['Current password is required when updating existing password.'],
                 ]);
             }
-            
+
             // Verify current password
-            if (!Hash::check($request->current_password, $user->password)) {
+            if (! Hash::check($request->current_password, $user->password)) {
                 throw ValidationException::withMessages([
                     'current_password' => ['The current password is incorrect.'],
                 ]);
@@ -72,8 +72,8 @@ class MeController extends Controller
         $user->save();
 
         return response()->json([
-            'message' => $hasExistingPassword 
-                ? 'Password updated successfully.' 
+            'message' => $hasExistingPassword
+                ? 'Password updated successfully.'
                 : 'Password set successfully.',
         ]);
     }

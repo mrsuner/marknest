@@ -33,7 +33,7 @@ class DocumentShareFactory extends Factory
             'show_watermark' => fake()->boolean(30),
             'access_level' => fake()->randomElement(['read', 'comment', 'edit']),
             'allowed_emails' => fake()->optional()->randomElements([
-                fake()->email(), fake()->email(), fake()->email()
+                fake()->email(), fake()->email(), fake()->email(),
             ], rand(1, 3)),
             'access_log' => [],
             'is_active' => true,

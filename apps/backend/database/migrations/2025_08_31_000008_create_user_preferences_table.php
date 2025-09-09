@@ -33,10 +33,10 @@ return new class extends Migration
             $table->json('notification_settings')->nullable();
             $table->json('keyboard_shortcuts')->nullable();
             $table->timestamps();
-            
+
             // Indexes
             $table->unique('user_id', 'unq_user_preferences_user_id');
-            
+
         });
     }
 

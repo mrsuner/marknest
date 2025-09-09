@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Subscription;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class SubscriptionSeeder extends Seeder
@@ -15,7 +15,7 @@ class SubscriptionSeeder extends Seeder
     {
         // Create subscriptions for non-free users
         $paidUsers = User::whereIn('plan', ['pro', 'enterprise'])->get();
-        
+
         $paidUsers->each(function ($user) {
             Subscription::factory()->create([
                 'user_id' => $user->id,

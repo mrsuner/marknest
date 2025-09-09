@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Folder;
 use App\Models\Document;
+use App\Models\Folder;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DocumentSeeder extends Seeder
@@ -40,7 +40,7 @@ class DocumentSeeder extends Seeder
         $demoUser = User::where('email', 'demo@example.com')->first();
         if ($demoUser) {
             $projectsFolder = $demoUser->folders()->where('slug', 'projects')->first();
-            
+
             if ($projectsFolder) {
                 Document::factory()->create([
                     'user_id' => $demoUser->id,

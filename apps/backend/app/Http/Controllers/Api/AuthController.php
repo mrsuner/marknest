@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Mail\OtpMail;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -21,7 +20,7 @@ class AuthController extends Controller
         ]);
 
         $email = $request->email;
-        
+
         // Create or find user
         $user = User::firstOrCreate(
             ['email' => $email],
@@ -33,11 +32,11 @@ class AuthController extends Controller
 
         // Generate OTP
         $otp = $this->generateOtp();
-        
+
         // Store OTP in cache with 10 minutes expiration
         // Also store the email associated with the OTP for magic link verification
         Cache::put($this->getOtpCacheKey($email), $otp, now()->addMinutes(10));
-        Cache::put('otp_email:' . $otp, $email, now()->addMinutes(10));
+        Cache::put('otp_email:'.$otp, $email, now()->addMinutes(10));
 
         // Send OTP via email (skip in local environment)
         if (config('app.env') !== 'local') {
@@ -59,11 +58,11 @@ class AuthController extends Controller
         ]);
 
         $providedOtp = $request->otp;
-        
+
         // If email is not provided, try to get it from the OTP cache (magic link flow)
-        if (!$request->email) {
-            $email = Cache::get('otp_email:' . $providedOtp);
-            if (!$email) {
+        if (! $request->email) {
+            $email = Cache::get('otp_email:'.$providedOtp);
+            if (! $email) {
                 throw ValidationException::withMessages([
                     'otp' => ['Invalid or expired OTP'],
                 ]);
@@ -71,11 +70,11 @@ class AuthController extends Controller
         } else {
             $email = $request->email;
         }
-        
+
         // Get cached OTP
         $cachedOtp = Cache::get($this->getOtpCacheKey($email));
 
-        if (!$cachedOtp || $cachedOtp !== $providedOtp) {
+        if (! $cachedOtp || $cachedOtp !== $providedOtp) {
             throw ValidationException::withMessages([
                 'otp' => ['Invalid or expired OTP'],
             ]);
@@ -83,12 +82,12 @@ class AuthController extends Controller
 
         // Clear the OTP from cache
         Cache::forget($this->getOtpCacheKey($email));
-        Cache::forget('otp_email:' . $providedOtp);
+        Cache::forget('otp_email:'.$providedOtp);
 
         // Find the user
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             throw ValidationException::withMessages([
                 'email' => ['User not found'],
             ]);
@@ -112,25 +111,25 @@ class AuthController extends Controller
 
         $email = $request->email;
         $password = $request->password;
-        
+
         // Find the user
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             throw ValidationException::withMessages([
                 'email' => ['Invalid credentials'],
             ]);
         }
 
         // Check if user has a password set
-        if (!$user->password) {
+        if (! $user->password) {
             throw ValidationException::withMessages([
                 'email' => ['Please use email verification to sign in, or set a password first'],
             ]);
         }
 
         // Verify password
-        if (!Hash::check($password, $user->password)) {
+        if (! Hash::check($password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Invalid credentials'],
             ]);
@@ -167,6 +166,6 @@ class AuthController extends Controller
 
     private function getOtpCacheKey(string $email): string
     {
-        return 'otp:' . $email;
+        return 'otp:'.$email;
     }
 }

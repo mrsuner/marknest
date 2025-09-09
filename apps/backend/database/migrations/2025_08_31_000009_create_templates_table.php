@@ -26,7 +26,7 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->string('thumbnail_url')->nullable();
             $table->timestamps();
-            
+
             // Indexes
             $table->index('slug', 'idx_templates_slug');
             $table->index('category', 'idx_templates_category');
@@ -35,7 +35,7 @@ return new class extends Migration
             $table->index('is_featured', 'idx_templates_is_featured');
             $table->index('usage_count', 'idx_templates_usage_count');
             $table->index(['is_public', 'category'], 'idx_templates_public_category');
-            
+
         });
     }
 

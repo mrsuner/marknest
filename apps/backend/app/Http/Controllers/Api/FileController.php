@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Data\MediaFileData;
 use App\Http\Controllers\Controller;
 use App\Models\MediaFile;
-use App\Data\MediaFileData;
 use App\Traits\ChecksSubscriptionLimits;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 class FileController extends Controller
 {
     use ChecksSubscriptionLimits;
+
     public function index(Request $request): JsonResponse
     {
         $query = MediaFile::where('user_id', $request->user()->id);
@@ -33,7 +34,7 @@ class FileController extends Controller
                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                         'text/plain',
                         'text/markdown',
-                        'text/csv'
+                        'text/csv',
                     ]);
                     break;
             }
@@ -44,7 +45,7 @@ class FileController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('original_name', 'like', "%{$search}%")
-                  ->orWhere('filename', 'like', "%{$search}%");
+                    ->orWhere('filename', 'like', "%{$search}%");
             });
         }
 
@@ -56,7 +57,7 @@ class FileController extends Controller
         // Sort options
         $sortBy = $request->input('sort_by', 'created_at');
         $sortOrder = $request->input('sort_order', 'desc');
-        
+
         $allowedSortFields = ['original_name', 'size', 'created_at', 'last_accessed_at', 'download_count'];
         if (in_array($sortBy, $allowedSortFields)) {
             $query->orderBy($sortBy, $sortOrder);
@@ -67,7 +68,7 @@ class FileController extends Controller
         $files = $query->paginate($perPage);
 
         $user = $request->user();
-        
+
         return response()->json([
             'success' => true,
             'data' => MediaFileData::collect($files->items()),
@@ -88,17 +89,17 @@ class FileController extends Controller
             'limits' => [
                 'upload_size_limit' => $this->getUserUploadSizeLimit($user),
                 'upload_size_limit_formatted' => $this->formatBytes($this->getUserUploadSizeLimit($user)),
-            ]
+            ],
         ]);
     }
 
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         // Get user's upload size limit in KB for validation rule
         $uploadLimitKB = ceil($this->getUserUploadSizeLimit($user) / 1024);
-        
+
         $validator = Validator::make($request->all(), [
             'files' => 'required|array|max:10',
             'files.*' => "required|file|max:{$uploadLimitKB}", // Dynamic limit based on user's plan
@@ -115,7 +116,7 @@ class FileController extends Controller
                 'limits' => [
                     'upload_size_limit' => $this->getUserUploadSizeLimit($user),
                     'upload_size_limit_formatted' => $this->formatBytes($this->getUserUploadSizeLimit($user)),
-                ]
+                ],
             ], 422);
         }
 
@@ -126,7 +127,7 @@ class FileController extends Controller
             $totalSize += $file->getSize();
         }
 
-        if (!$this->userHasStorageFor($user, $totalSize)) {
+        if (! $this->userHasStorageFor($user, $totalSize)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Insufficient storage space. Please upgrade your plan or delete some files.',
@@ -139,7 +140,7 @@ class FileController extends Controller
                     'remaining_formatted' => $this->formatBytes($this->getUserStorageRemaining($user)),
                     'required' => $totalSize,
                     'required_formatted' => $this->formatBytes($totalSize),
-                ]
+                ],
             ], 422);
         }
 
@@ -161,6 +162,7 @@ class FileController extends Controller
                         'limit' => $this->getUserUploadSizeLimit($user),
                         'limit_formatted' => $this->formatBytes($this->getUserUploadSizeLimit($user)),
                     ];
+
                     continue;
                 }
                 // Generate file hash for duplicate detection
@@ -177,15 +179,16 @@ class FileController extends Controller
                         'success' => false,
                         'message' => 'File already exists',
                         'original_name' => $file->getClientOriginalName(),
-                        'existing_file' => MediaFileData::from($existingFile)
+                        'existing_file' => MediaFileData::from($existingFile),
                     ];
+
                     continue;
                 }
 
                 // Generate unique filename
                 $originalName = $file->getClientOriginalName();
                 $extension = $file->getClientOriginalExtension();
-                $filename = Str::uuid() . '.' . $extension;
+                $filename = Str::uuid().'.'.$extension;
 
                 // Store file
                 $path = $file->storeAs('media', $filename, 'public');
@@ -210,36 +213,36 @@ class FileController extends Controller
 
                 $uploadedFiles[] = [
                     'success' => true,
-                    'file' => MediaFileData::from($mediaFile)
+                    'file' => MediaFileData::from($mediaFile),
                 ];
-                
+
                 // Update user's storage usage
                 $user->increment('storage_used', $file->getSize());
 
             } catch (\Exception $e) {
                 $uploadedFiles[] = [
                     'success' => false,
-                    'message' => 'Upload failed: ' . $e->getMessage(),
-                    'original_name' => $file->getClientOriginalName()
+                    'message' => 'Upload failed: '.$e->getMessage(),
+                    'original_name' => $file->getClientOriginalName(),
                 ];
             }
         }
 
         $successCount = collect($uploadedFiles)->where('success', true)->count();
         $failureCount = collect($uploadedFiles)->where('success', false)->count();
-        
+
         // Refresh user to get updated storage_used
         $user->refresh();
 
         return response()->json([
             'success' => $successCount > 0,
-            'message' => "Uploaded {$successCount} files successfully" . 
-                        ($failureCount > 0 ? ", {$failureCount} failed" : ""),
+            'message' => "Uploaded {$successCount} files successfully".
+                        ($failureCount > 0 ? ", {$failureCount} failed" : ''),
             'data' => $uploadedFiles,
             'summary' => [
                 'total' => count($uploadedFiles),
                 'successful' => $successCount,
-                'failed' => $failureCount
+                'failed' => $failureCount,
             ],
             'storage' => [
                 'used' => $this->getUserStorageUsed($user),
@@ -252,7 +255,7 @@ class FileController extends Controller
             'limits' => [
                 'upload_size_limit' => $this->getUserUploadSizeLimit($user),
                 'upload_size_limit_formatted' => $this->formatBytes($this->getUserUploadSizeLimit($user)),
-            ]
+            ],
         ], $successCount > 0 ? 201 : 422);
     }
 
@@ -262,13 +265,13 @@ class FileController extends Controller
         if ($file->user_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'File not found'
+                'message' => 'File not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => MediaFileData::from($file)
+            'data' => MediaFileData::from($file),
         ]);
     }
 
@@ -278,7 +281,7 @@ class FileController extends Controller
         if ($file->user_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'File not found'
+                'message' => 'File not found',
             ], 404);
         }
 
@@ -292,7 +295,7 @@ class FileController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -300,7 +303,7 @@ class FileController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => MediaFileData::from($file->fresh())
+            'data' => MediaFileData::from($file->fresh()),
         ]);
     }
 
@@ -310,14 +313,14 @@ class FileController extends Controller
         if ($file->user_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'File not found'
+                'message' => 'File not found',
             ], 404);
         }
 
         try {
             // Store file size before deletion
             $fileSize = $file->size;
-            
+
             // Delete the actual file from storage
             if (Storage::disk($file->disk)->exists($file->path)) {
                 Storage::disk($file->disk)->delete($file->path);
@@ -325,7 +328,7 @@ class FileController extends Controller
 
             // Delete the database record
             $file->delete();
-            
+
             // Update user's storage usage
             $user = $request->user();
             $user->decrement('storage_used', $fileSize);
@@ -340,12 +343,12 @@ class FileController extends Controller
                     'used_formatted' => $this->formatBytes($this->getUserStorageUsed($user)),
                     'limit_formatted' => $this->formatBytes($this->getUserStorageLimit($user)),
                     'remaining_formatted' => $this->formatBytes($this->getUserStorageRemaining($user)),
-                ]
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete file: ' . $e->getMessage()
+                'message' => 'Failed to delete file: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -353,18 +356,18 @@ class FileController extends Controller
     public function download(Request $request, MediaFile $file): \Symfony\Component\HttpFoundation\Response
     {
         // Ensure the file belongs to the authenticated user or is public
-        if ($file->user_id !== $request->user()->id && !$file->is_public) {
+        if ($file->user_id !== $request->user()->id && ! $file->is_public) {
             return response()->json([
                 'success' => false,
-                'message' => 'File not found'
+                'message' => 'File not found',
             ], 404);
         }
 
         // Check if file exists in storage
-        if (!Storage::disk($file->disk)->exists($file->path)) {
+        if (! Storage::disk($file->disk)->exists($file->path)) {
             return response()->json([
                 'success' => false,
-                'message' => 'File not found in storage'
+                'message' => 'File not found in storage',
             ], 404);
         }
 
@@ -374,7 +377,7 @@ class FileController extends Controller
 
         // Return the file as a download response
         return Storage::disk($file->disk)->download(
-            $file->path, 
+            $file->path,
             $file->original_name
         );
     }

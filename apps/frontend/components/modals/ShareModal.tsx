@@ -153,21 +153,21 @@ export default function ShareModal({
           </div>
           
           <div className="flex-1 overflow-y-auto px-6 py-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Access Settings */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - Main Settings */}
+            <div className="space-y-8">
               {/* Access Settings */}
               <div className="card bg-base-50 border border-base-200">
                 <div className="card-body p-6">
-                  <h4 className="font-semibold text-base mb-4">Access Settings</h4>
+                  <h4 className="font-semibold text-lg mb-6">Access Settings</h4>
                   
                   {/* Access Level */}
-                  <div className="form-control mb-4">
-                    <label className="label pb-2">
-                      <span className="label-text font-medium">Access Level</span>
+                  <div className="form-control mb-6">
+                    <label className="label pb-3">
+                      <span className="label-text font-medium text-base">Access Level</span>
                     </label>
                     <select 
-                      className="select select-bordered"
+                      className="select select-bordered select-lg"
                       value={formData.access_level}
                       onChange={(e) => setFormData({ ...formData, access_level: e.target.value as 'public' | 'password' | 'email_list' })}
                     >
@@ -180,13 +180,13 @@ export default function ShareModal({
                   {/* Conditional Fields */}
                   {formData.access_level === 'password' && (
                     <div className="form-control">
-                      <label className="label pb-2">
-                        <span className="label-text font-medium">Password</span>
+                      <label className="label pb-3">
+                        <span className="label-text font-medium text-base">Password</span>
                         <span className="label-text-alt text-error">*Required</span>
                       </label>
                       <input
                         type="password"
-                        className="input input-bordered"
+                        className="input input-bordered input-lg"
                         placeholder="Set password for access"
                         value={formData.password || ''}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -197,15 +197,15 @@ export default function ShareModal({
 
                   {formData.access_level === 'email_list' && (
                     <div className="form-control">
-                      <label className="label pb-2">
-                        <span className="label-text font-medium">Allowed Emails</span>
+                      <label className="label pb-3">
+                        <span className="label-text font-medium text-base">Allowed Emails</span>
                       </label>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {(formData.allowed_emails || []).map((email, index) => (
-                          <div key={index} className="flex gap-2">
+                          <div key={index} className="flex gap-3">
                             <input
                               type="email"
-                              className="input input-bordered flex-1"
+                              className="input input-bordered input-lg flex-1"
                               value={email}
                               onChange={(e) => updateEmailInList(index, e.target.value)}
                               placeholder="Enter email address"
@@ -222,7 +222,7 @@ export default function ShareModal({
                         ))}
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm"
+                          className="btn btn-outline btn-sm"
                           onClick={addEmailToList}
                         >
                           + Add Email
@@ -236,40 +236,40 @@ export default function ShareModal({
               {/* Time & View Limits */}
               <div className="card bg-base-50 border border-base-200">
                 <div className="card-body p-6">
-                  <h4 className="font-semibold text-base mb-4">Limits & Expiration</h4>
+                  <h4 className="font-semibold text-lg mb-6">Limits & Expiration</h4>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-6">
                     <div className="form-control">
-                      <label className="label pb-2">
-                        <span className="label-text font-medium">Expires At</span>
+                      <label className="label pb-3">
+                        <span className="label-text font-medium text-base">Expires At</span>
                         <span className="label-text-alt text-base-content/60">Optional</span>
                       </label>
                       <input
                         type="datetime-local"
-                        className="input input-bordered"
+                        className="input input-bordered input-lg"
                         value={formData.expires_at ? new Date(formData.expires_at).toISOString().slice(0, 16) : ''}
                         onChange={(e) => setFormData({ ...formData, expires_at: e.target.value ? new Date(e.target.value).toISOString() : '' })}
                       />
-                      <label className="label pt-1">
+                      <label className="label pt-2">
                         <span className="label-text-alt text-base-content/50">Leave empty for no expiration</span>
                       </label>
                     </div>
 
                     <div className="form-control">
-                      <label className="label pb-2">
-                        <span className="label-text font-medium">Max Views</span>
+                      <label className="label pb-3">
+                        <span className="label-text font-medium text-base">Max Views</span>
                         <span className="label-text-alt text-base-content/60">Optional</span>
                       </label>
                       <input
                         type="number"
-                        className="input input-bordered"
+                        className="input input-bordered input-lg"
                         min="1"
                         max="10000"
                         placeholder="No limit"
                         value={formData.max_views || ''}
                         onChange={(e) => setFormData({ ...formData, max_views: e.target.value ? parseInt(e.target.value) : undefined })}
                       />
-                      <label className="label pt-1">
+                      <label className="label pt-2">
                         <span className="label-text-alt text-base-content/50">Maximum number of views</span>
                       </label>
                     </div>
@@ -278,66 +278,70 @@ export default function ShareModal({
               </div>
 
               {/* Description */}
-              <div className="form-control">
-                <label className="label pb-2">
-                  <span className="label-text font-medium">Description</span>
-                  <span className="label-text-alt text-base-content/60">Optional</span>
-                </label>
-                <textarea
-                  className="textarea textarea-bordered min-h-[80px]"
-                  placeholder="Add a description to help others understand what you're sharing..."
-                  rows={3}
-                  value={formData.description || ''}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
+              <div className="card bg-base-50 border border-base-200">
+                <div className="card-body p-6">
+                  <h4 className="font-semibold text-lg mb-6">Description</h4>
+                  <div className="form-control">
+                    <label className="label pb-3">
+                      <span className="label-text font-medium text-base">Optional Description</span>
+                    </label>
+                    <textarea
+                      className="textarea textarea-bordered textarea-lg min-h-[100px]"
+                      placeholder="Add a description to help others understand what you're sharing..."
+                      rows={4}
+                      value={formData.description || ''}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Right Column - Permissions & Presets */}
-            <div className="space-y-6">
+            {/* Right Column - Permissions & Status */}
+            <div className="space-y-8">
               {/* Permissions */}
               <div className="card bg-base-50 border border-base-200">
                 <div className="card-body p-6">
-                  <h4 className="font-semibold text-base mb-4">Permissions</h4>
-                  <div className="space-y-4">
+                  <h4 className="font-semibold text-lg mb-6">Permissions</h4>
+                  <div className="space-y-6">
                     <div className="form-control">
-                      <label className="label cursor-pointer justify-start gap-3 py-3">
+                      <label className="label cursor-pointer justify-start gap-4 py-4">
                         <input 
                           type="checkbox" 
-                          className="checkbox checkbox-primary" 
+                          className="checkbox checkbox-primary checkbox-lg" 
                           checked={formData.allow_download}
                           onChange={(e) => setFormData({ ...formData, allow_download: e.target.checked })}
                         />
                         <div className="flex flex-col">
-                          <span className="label-text font-medium">Allow Download</span>
+                          <span className="label-text font-medium text-base">Allow Download</span>
                           <span className="label-text-alt text-base-content/60">Users can download the document</span>
                         </div>
                       </label>
                     </div>
                     <div className="form-control">
-                      <label className="label cursor-pointer justify-start gap-3 py-3">
+                      <label className="label cursor-pointer justify-start gap-4 py-4">
                         <input 
                           type="checkbox" 
-                          className="checkbox checkbox-primary" 
+                          className="checkbox checkbox-primary checkbox-lg" 
                           checked={formData.allow_copy}
                           onChange={(e) => setFormData({ ...formData, allow_copy: e.target.checked })}
                         />
                         <div className="flex flex-col">
-                          <span className="label-text font-medium">Allow Copy</span>
+                          <span className="label-text font-medium text-base">Allow Copy</span>
                           <span className="label-text-alt text-base-content/60">Users can copy text content</span>
                         </div>
                       </label>
                     </div>
                     <div className="form-control">
-                      <label className="label cursor-pointer justify-start gap-3 py-3">
+                      <label className="label cursor-pointer justify-start gap-4 py-4">
                         <input 
                           type="checkbox" 
-                          className="checkbox checkbox-primary" 
+                          className="checkbox checkbox-primary checkbox-lg" 
                           checked={formData.show_watermark}
                           onChange={(e) => setFormData({ ...formData, show_watermark: e.target.checked })}
                         />
                         <div className="flex flex-col">
-                          <span className="label-text font-medium">Show Watermark</span>
+                          <span className="label-text font-medium text-base">Show Watermark</span>
                           <span className="label-text-alt text-base-content/60">Add watermark to document</span>
                         </div>
                       </label>
@@ -349,25 +353,25 @@ export default function ShareModal({
               {/* Quick Presets */}
               <div className="card bg-primary/5 border border-primary/20">
                 <div className="card-body p-6">
-                  <h4 className="font-semibold text-base mb-4">Quick Presets</h4>
-                  <div className="space-y-2">
+                  <h4 className="font-semibold text-lg mb-6">Quick Presets</h4>
+                  <div className="space-y-4">
                     <button 
                       type="button" 
-                      className="btn btn-outline btn-sm w-full justify-start"
+                      className="btn btn-outline w-full justify-start text-left py-3"
                       onClick={() => handlePresetClick('public')}
                     >
                       🌐 Public Share
                     </button>
                     <button 
                       type="button" 
-                      className="btn btn-outline btn-sm w-full justify-start"
+                      className="btn btn-outline w-full justify-start text-left py-3"
                       onClick={() => handlePresetClick('private')}
                     >
                       🔒 Private Share
                     </button>
                     <button 
                       type="button" 
-                      className="btn btn-outline btn-sm w-full justify-start"
+                      className="btn btn-outline w-full justify-start text-left py-3"
                       onClick={() => handlePresetClick('temporary')}
                     >
                       ⏰ Temporary Share
@@ -376,16 +380,14 @@ export default function ShareModal({
                 </div>
               </div>
 
-              {/* Preview */}
+              {/* Status Info */}
               <div className="alert alert-info">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <div className="text-sm">
-                  <div className="font-medium">Share Link Preview</div>
-                  <div className="font-mono text-xs mt-1 opacity-70">
-                    marknest.com/share/abc123...
-                  </div>
+                <div>
+                  <div className="font-medium">Active</div>
+                  <div className="text-sm opacity-75 mt-1">Share is publicly accessible</div>
                 </div>
               </div>
             </div>
@@ -393,15 +395,15 @@ export default function ShareModal({
           </div>
 
           {/* Footer Actions */}
-          <div className="sticky bottom-0 bg-base-100 px-6 py-4 border-t border-base-300 z-10">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="text-sm text-base-content/60">
+          <div className="sticky bottom-0 bg-base-100 px-6 py-6 border-t border-base-300 z-10">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
+              <div className="text-sm text-base-content/60 text-center sm:text-left">
                 Share will be created and ready to use immediately
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-4 w-full sm:w-auto">
                 <button
                   type="button"
-                  className="btn btn-ghost"
+                  className="btn btn-ghost btn-lg flex-1 sm:flex-none"
                   onClick={onClose}
                   disabled={isLoading}
                 >
@@ -409,7 +411,7 @@ export default function ShareModal({
                 </button>
                 <button 
                   type="submit" 
-                  className="btn btn-primary px-8"
+                  className="btn btn-primary btn-lg px-8 flex-1 sm:flex-none"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -419,10 +421,10 @@ export default function ShareModal({
                     </>
                   ) : (
                     <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326" />
                       </svg>
-                      Create Share
+                      Save Changes
                     </>
                   )}
                 </button>

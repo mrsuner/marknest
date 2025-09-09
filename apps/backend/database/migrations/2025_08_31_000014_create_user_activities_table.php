@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('ip_address', 45)->nullable();
             $table->string('user_agent')->nullable();
             $table->timestamp('created_at')->nullable();
-            
+
             // Indexes
             $table->index('user_id', 'idx_user_activities_user_id');
             $table->index('activity_type', 'idx_user_activities_activity_type');
@@ -31,7 +31,7 @@ return new class extends Migration
             $table->index('created_at', 'idx_user_activities_created_at');
             $table->index(['user_id', 'created_at'], 'idx_user_activities_user_created');
             $table->index(['entity_type', 'entity_id'], 'idx_user_activities_entity');
-            
+
         });
     }
 

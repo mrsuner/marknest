@@ -30,7 +30,7 @@ class DocumentVersionSeeder extends Seeder
             // Create additional versions for some documents
             if (rand(1, 100) <= 70) { // 70% chance
                 $versionCount = rand(2, 8);
-                
+
                 for ($i = 2; $i <= $versionCount; $i++) {
                     DocumentVersion::factory()->forDocument($document)->create([
                         'version_number' => $i,
@@ -38,7 +38,7 @@ class DocumentVersionSeeder extends Seeder
                         'created_at' => $document->created_at->addHours($i * 2),
                     ]);
                 }
-                
+
                 // Update document version number
                 $document->update(['version_number' => $versionCount]);
             }

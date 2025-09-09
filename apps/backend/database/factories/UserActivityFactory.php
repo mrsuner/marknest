@@ -19,11 +19,11 @@ class UserActivityFactory extends Factory
     {
         $activityType = fake()->randomElement([
             'login', 'logout', 'document_create', 'document_update', 'document_delete',
-            'folder_create', 'folder_update', 'folder_delete', 'share_create', 'export_request'
+            'folder_create', 'folder_update', 'folder_delete', 'share_create', 'export_request',
         ]);
-        
+
         $entityType = $this->getEntityTypeForActivity($activityType);
-        
+
         return [
             'user_id' => User::factory(),
             'activity_type' => $activityType,

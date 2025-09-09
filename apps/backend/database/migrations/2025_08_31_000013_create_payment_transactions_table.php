@@ -33,7 +33,7 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->timestamp('processed_at')->nullable();
             $table->timestamps();
-            
+
             // Indexes
             $table->index('user_id', 'idx_payment_transactions_user_id');
             $table->index('subscription_id', 'idx_payment_transactions_subscription_id');
@@ -44,7 +44,7 @@ return new class extends Migration
             $table->index('created_at', 'idx_payment_transactions_created_at');
             $table->index(['user_id', 'type'], 'idx_payment_transactions_user_type');
             $table->index(['user_id', 'status'], 'idx_payment_transactions_user_status');
-            
+
         });
     }
 

@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Subscription;
 use App\Models\PaymentTransaction;
+use App\Models\Subscription;
 use Illuminate\Database\Seeder;
 
 class PaymentTransactionSeeder extends Seeder

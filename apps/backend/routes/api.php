@@ -1,17 +1,16 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentActionController;
+use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentShareController;
-use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserPreferenceController;
 use App\Http\Controllers\SubscriptionController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
     Route::post('/request-otp', [AuthController::class, 'requestOtp']);
@@ -27,11 +26,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/', [MeController::class, 'update']);
         Route::put('password', [MeController::class, 'updatePassword']);
     });
-    
+
     // User management
     Route::prefix('user')->group(function () {
         Route::get('profile', [UserController::class, 'profile']);
-        
+
         // User preferences
         Route::get('preferences', [UserPreferenceController::class, 'show']);
         Route::put('preferences', [UserPreferenceController::class, 'update']);
@@ -46,18 +45,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('{document}', [DocumentController::class, 'update']);
         Route::delete('{document}', [DocumentController::class, 'destroy']);
         Route::post('{document}/duplicate', [DocumentController::class, 'duplicate']);
-        
+
         // Document actions
         Route::post('{document}/toggle-favorite', [DocumentActionController::class, 'toggleFavorite']);
         Route::post('{document}/toggle-archive', [DocumentActionController::class, 'toggleArchive']);
         Route::post('bulk-toggle-favorite', [DocumentActionController::class, 'bulkToggleFavorite']);
         Route::post('bulk-toggle-archive', [DocumentActionController::class, 'bulkToggleArchive']);
-        
+
         // Version management
         Route::get('{document}/versions', [DocumentController::class, 'getVersions']);
         Route::get('{document}/versions/{versionId}', [DocumentController::class, 'getVersion']);
         Route::post('{document}/versions/{versionId}/restore', [DocumentController::class, 'restoreVersion']);
-        
+
         // Media attachments
         Route::get('{document}/media', [DocumentController::class, 'getMedia']);
         Route::post('{document}/media/{mediaFile}', [DocumentController::class, 'attachMedia']);
@@ -77,8 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('bulk-update', [DocumentShareController::class, 'bulkUpdate']);
     });
 
-
-    Route::prefix('files')->group(function (){
+    Route::prefix('files')->group(function () {
         Route::get('/', [FileController::class, 'index']);
         Route::post('/', [FileController::class, 'store']);
         Route::get('{file}', [FileController::class, 'show']);
@@ -96,14 +94,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('{folder}/contents', [FolderController::class, 'getContents']); // Specific folder contents
         Route::put('{folder}', [FolderController::class, 'update']);
         Route::delete('{folder}', [FolderController::class, 'destroy']);
-        
+
         // Folder hierarchy operations
         Route::post('{folder}/move', [FolderController::class, 'move']);
         Route::get('{folder}/breadcrumbs', [FolderController::class, 'getBreadcrumbs']);
         Route::get('{folder}/children', [FolderController::class, 'getChildren']);
         Route::get('{folder}/documents', [FolderController::class, 'getDocuments']);
         Route::get('{folder}/tree', [FolderController::class, 'getTree']);
-        
+
         // Bulk operations
         Route::post('bulk-move', [FolderController::class, 'bulkMove']);
         Route::post('bulk-delete', [FolderController::class, 'bulkDelete']);
@@ -122,7 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Search across documents and folders
     Route::get('search', [DocumentController::class, 'globalSearch']);
-    
+
     // Subscription management
     Route::prefix('subscription')->group(function () {
         Route::get('plans', [SubscriptionController::class, 'plans']);
@@ -132,12 +130,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('change-plan', [SubscriptionController::class, 'changePlan']);
         Route::post('cancel', [SubscriptionController::class, 'cancel']);
         Route::post('resume', [SubscriptionController::class, 'resume']);
-        
+
         // Payment methods
         Route::get('payment-methods', [SubscriptionController::class, 'paymentMethods']);
         Route::post('payment-methods', [SubscriptionController::class, 'addPaymentMethod']);
         Route::delete('payment-methods/{paymentMethodId}', [SubscriptionController::class, 'deletePaymentMethod']);
-        
+
         // Invoices
         Route::get('invoices', [SubscriptionController::class, 'invoices']);
         Route::get('invoices/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice']);

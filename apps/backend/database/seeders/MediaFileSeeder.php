@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Document;
 use App\Models\MediaFile;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class MediaFileSeeder extends Seeder
@@ -23,7 +23,7 @@ class MediaFileSeeder extends Seeder
             $mediaFiles = MediaFile::factory(rand(3, 8))->create([
                 'user_id' => $user->id,
             ]);
-            
+
             $allMediaFiles->push(...$mediaFiles);
         });
 
@@ -33,7 +33,7 @@ class MediaFileSeeder extends Seeder
 
         // Now attach media files to documents using the pivot table
         $documents = Document::with('user')->get();
-        
+
         $documents->each(function ($document) use ($allMediaFiles) {
             if (rand(1, 100) <= 40) { // 40% chance
                 // Get media files belonging to this user + public files
@@ -43,10 +43,10 @@ class MediaFileSeeder extends Seeder
 
                 if ($availableMedia->isNotEmpty()) {
                     $attachedMedia = $availableMedia->random(rand(1, min(3, $availableMedia->count())));
-                    
+
                     foreach ($attachedMedia as $index => $mediaFile) {
                         // Check if the media file is already attached to avoid duplicates
-                        if (!$document->mediaFiles()->where('media_file_id', $mediaFile->id)->exists()) {
+                        if (! $document->mediaFiles()->where('media_file_id', $mediaFile->id)->exists()) {
                             $document->mediaFiles()->attach($mediaFile->id, [
                                 'usage_context' => fake()->randomElement(['inline', 'attachment', 'cover', 'gallery']),
                                 'order' => $index + 1,
@@ -65,14 +65,14 @@ class MediaFileSeeder extends Seeder
         // Create some shared media scenarios - reuse popular media across documents
         $popularMedia = MediaFile::where('is_public', true)->limit(3)->get();
         $randomDocuments = Document::inRandomOrder()->limit(10)->get();
-        
+
         $randomDocuments->each(function ($document) use ($popularMedia) {
             if (rand(1, 100) <= 30) { // 30% chance
                 $sharedMedia = $popularMedia->random(1);
                 if ($sharedMedia->isNotEmpty()) {
                     $mediaFile = $sharedMedia->first();
                     // Check if this media file is already attached
-                    if (!$document->mediaFiles()->where('media_file_id', $mediaFile->id)->exists()) {
+                    if (! $document->mediaFiles()->where('media_file_id', $mediaFile->id)->exists()) {
                         $document->mediaFiles()->attach($mediaFile->id, [
                             'usage_context' => 'inline',
                             'order' => $document->mediaFiles()->count() + 1,

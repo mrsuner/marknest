@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('order')->default(0); // For ordering media in document
             $table->json('metadata')->nullable(); // Position, size, alt text override, etc.
             $table->timestamps();
-            
+
             // Indexes
             $table->index('document_id', 'idx_document_media_document_id');
             $table->index('media_file_id', 'idx_document_media_media_file_id');
