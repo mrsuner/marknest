@@ -28,8 +28,6 @@ class Document extends Model
         'version_number',
         'is_favorite',
         'is_archived',
-        'is_trashed',
-        'trashed_at',
         'tags',
         'metadata',
         'status',
@@ -43,8 +41,6 @@ class Document extends Model
         'version_number' => 'integer',
         'is_favorite' => 'boolean',
         'is_archived' => 'boolean',
-        'is_trashed' => 'boolean',
-        'trashed_at' => 'datetime',
         'tags' => 'array',
         'metadata' => 'array',
         'last_accessed_at' => 'datetime',
@@ -97,11 +93,6 @@ class Document extends Model
     public function scopeArchived($query)
     {
         return $query->where('is_archived', true);
-    }
-
-    public function scopeTrashed($query)
-    {
-        return $query->where('is_trashed', true);
     }
 
     public function scopeByStatus($query, string $status)

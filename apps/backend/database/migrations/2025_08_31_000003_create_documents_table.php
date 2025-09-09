@@ -25,8 +25,6 @@ return new class extends Migration
             $table->integer('version_number')->default(1);
             $table->boolean('is_favorite')->default(false);
             $table->boolean('is_archived')->default(false);
-            $table->boolean('is_trashed')->default(false);
-            $table->timestamp('trashed_at')->nullable();
             $table->json('tags')->nullable(); // Store tags as JSON array
             $table->json('metadata')->nullable(); // Store additional metadata
             $table->string('status', 20)->default('draft'); // draft, published, private
@@ -40,7 +38,6 @@ return new class extends Migration
             $table->index('slug', 'idx_documents_slug');
             $table->index('is_favorite', 'idx_documents_is_favorite');
             $table->index('is_archived', 'idx_documents_is_archived');
-            $table->index('is_trashed', 'idx_documents_is_trashed');
             $table->index('status', 'idx_documents_status');
             $table->index('created_at', 'idx_documents_created_at');
             $table->index('updated_at', 'idx_documents_updated_at');

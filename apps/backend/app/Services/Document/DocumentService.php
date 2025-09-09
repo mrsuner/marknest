@@ -157,7 +157,6 @@ class DocumentService
     {
         $doc = Document::where('id', $documentId)
             ->where('user_id', $user->id)
-            ->where('is_trashed', false)
             ->with(['folder', 'versions' => function ($query) {
                 $query->orderBy('version_number', 'desc')->limit(5);
             }])
@@ -186,7 +185,6 @@ class DocumentService
         $sortDirection = $filters['sort_direction'] ?? 'desc';
 
         $query = Document::where('user_id', $user->id)
-            ->where('is_trashed', false)
             ->where('is_archived', false)
             ->with('folder:id,name,path');
 
@@ -273,6 +271,21 @@ class DocumentService
             ]);
 
             return $duplicate;
+        });
+    }
+
+    /**
+     * Soft delete a document
+     *
+     * @param  Document  $document  Document to delete
+     * @param  User  $user  User performing the deletion
+     * @return bool True if deletion was successful
+     */
+    public function deleteDocument(Document $document, User $user): bool
+    {
+        return DB::transaction(function () use ($document, $user) {
+            // Use Laravel's built-in soft delete
+            return $document->delete();
         });
     }
 

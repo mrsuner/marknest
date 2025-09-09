@@ -177,7 +177,6 @@ class DocumentController extends Controller
 
         $doc = Document::where('id', $document)
             ->where('user_id', $user->id)
-            ->where('is_trashed', false)
             ->firstOrFail();
 
         $validated = $request->validated();
@@ -226,7 +225,6 @@ class DocumentController extends Controller
 
         $doc = Document::where('id', $document)
             ->where('user_id', $user->id)
-            ->where('is_trashed', false)
             ->firstOrFail();
 
         $validated = $request->validated();
@@ -287,7 +285,6 @@ class DocumentController extends Controller
 
         $doc = Document::where('id', $document)
             ->where('user_id', $user->id)
-            ->where('is_trashed', false)
             ->firstOrFail();
 
         $version = $this->versionService->getVersion($doc, $versionId);
@@ -349,7 +346,6 @@ class DocumentController extends Controller
 
         $doc = Document::where('id', $document)
             ->where('user_id', $user->id)
-            ->where('is_trashed', false)
             ->firstOrFail();
 
         $version = $this->versionService->getVersion($doc, $versionId);
@@ -501,5 +497,41 @@ class DocumentController extends Controller
             ],
             'message' => 'Document duplicated successfully',
         ], 201);
+    }
+
+    /**
+     * Soft delete a document.
+     *
+     * Soft delete a document using Laravel's built-in SoftDeletes functionality.
+     * This is a soft delete operation - the document can be restored later.
+     *
+     * @param  string  $document  Document ID to delete
+     * @return JsonResponse JSON response with success message
+     *
+     * @api DELETE /api/documents/{id}
+     *
+     * @apiParam {string} id Document unique ID
+     *
+     * @apiSuccess (200) {string} message Success message
+     *
+     * @apiError (404) Document not found or user lacks permission
+     */
+    public function destroy(string $document): JsonResponse
+    {
+        $user = Auth::user();
+
+        $doc = Document::where('id', $document)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$doc) {
+            return response()->json(['message' => 'Document not found'], 404);
+        }
+
+        $this->documentService->deleteDocument($doc, $user);
+
+        return response()->json([
+            'message' => 'Document moved to trash successfully',
+        ]);
     }
 }

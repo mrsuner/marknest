@@ -47,7 +47,6 @@ export interface Document {
   version_number: number
   is_favorite: boolean
   is_archived: boolean
-  is_trashed?: boolean
   tags?: string[]
   metadata?: any
   status: string
