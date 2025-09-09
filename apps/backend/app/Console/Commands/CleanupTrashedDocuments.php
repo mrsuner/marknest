@@ -30,45 +30,46 @@ class CleanupTrashedDocuments extends Command
     {
         $days = $this->option('days');
         $cutoffDate = Carbon::now()->subDays($days);
-        
+
         $this->info("Searching for documents trashed before {$cutoffDate->toDateTimeString()}...");
-        
+
         // Get documents that have been soft deleted for more than specified days
         $oldTrashedDocuments = Document::onlyTrashed()
             ->where('deleted_at', '<', $cutoffDate)
             ->get();
-        
+
         if ($oldTrashedDocuments->isEmpty()) {
             $this->info('No documents found for permanent deletion.');
+
             return Command::SUCCESS;
         }
-        
+
         $count = $oldTrashedDocuments->count();
         $this->info("Found {$count} document(s) to permanently delete.");
-        
+
         if ($this->confirm("Do you want to permanently delete these {$count} document(s)?")) {
             $deletedCount = 0;
-            
+
             foreach ($oldTrashedDocuments as $document) {
                 try {
                     // Delete associated versions first
                     $document->versions()->delete();
-                    
+
                     // Delete associated shares
                     $document->shares()->delete();
-                    
+
                     // Delete associated collaborators
                     $document->collaborators()->delete();
-                    
+
                     // Detach media files
                     $document->mediaFiles()->detach();
-                    
+
                     // Force delete the document
                     $document->forceDelete();
-                    
+
                     $deletedCount++;
                     $this->line("Deleted: {$document->title} (ID: {$document->id})");
-                    
+
                     Log::info('Permanently deleted trashed document', [
                         'document_id' => $document->id,
                         'title' => $document->title,
@@ -83,12 +84,12 @@ class CleanupTrashedDocuments extends Command
                     ]);
                 }
             }
-            
+
             $this->info("Successfully deleted {$deletedCount} document(s).");
         } else {
             $this->info('Operation cancelled.');
         }
-        
+
         return Command::SUCCESS;
     }
 }

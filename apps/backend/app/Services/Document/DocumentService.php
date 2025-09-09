@@ -7,7 +7,12 @@ use App\Models\DocumentVersion;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use League\CommonMark\Environment\Environment;
+use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
+use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
+use League\CommonMark\MarkdownConverter;
 
 class DocumentService
 {
@@ -283,7 +288,7 @@ class DocumentService
      */
     public function deleteDocument(Document $document, User $user): bool
     {
-        return DB::transaction(function () use ($document, $user) {
+        return DB::transaction(function () use ($document) {
             // Use Laravel's built-in soft delete
             return $document->delete();
         });
@@ -291,15 +296,44 @@ class DocumentService
 
     /**
      * Render markdown content to HTML
-     * TODO: Implement actual markdown rendering
      *
      * @param  string  $content  Markdown content
      * @return string Rendered HTML
      */
     private function renderMarkdown(string $content): string
     {
-        // TODO: Implement markdown rendering
-        // For now, return content as-is
-        return $content;
+        if (empty($content)) {
+            return '';
+        }
+
+        try {
+            // Create environment with GitHub Flavored Markdown support
+            $environment = new Environment([
+                'html_input' => 'strip',
+                'allow_unsafe_links' => false,
+                'max_nesting_level' => 100,
+            ]);
+
+            // Add core CommonMark extensions
+            $environment->addExtension(new CommonMarkCoreExtension);
+
+            // Add GitHub Flavored Markdown extensions (tables, strikethrough, etc.)
+            $environment->addExtension(new GithubFlavoredMarkdownExtension);
+
+            // Create the converter
+            $converter = new MarkdownConverter($environment);
+
+            // Convert markdown to HTML
+            return $converter->convert($content)->getContent();
+        } catch (\Exception $e) {
+            // Log the error for debugging but don't fail the document creation
+            Log::error('Markdown rendering failed: '.$e->getMessage(), [
+                'content_length' => strlen($content),
+                'content_preview' => substr($content, 0, 100),
+            ]);
+
+            // Return the original content as fallback
+            return htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
+        }
     }
 }

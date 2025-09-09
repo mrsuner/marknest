@@ -7,13 +7,15 @@ import VersionComparison from './VersionComparison';
 import { useGetDocumentQuery, useUpdateDocumentMutation, type DocumentVersion } from '@/lib/store/api/documentsApi';
 import ShareModal from '@/components/modals/ShareModal';
 import { type DocumentShare } from '@/lib/store/api/documentSharesApi';
+import FilesBrowseModal from './FilesBrowseModal';
+import { type MediaFile } from '@/src/features/files/domain/files.types';
 
 interface DocumentEditorProps {
   documentId: string;
 }
 
 // Debounce helper
-function useDebounce<T extends (...args: any[]) => void>(
+function useDebounce<T extends (...args: never[]) => void>(
   callback: T,
   delay: number
 ): (...args: Parameters<T>) => void {
@@ -64,6 +66,9 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
   
   // Share modal states
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  
+  // Files browse modal states
+  const [filesBrowseModalOpen, setFilesBrowseModalOpen] = useState(false);
   
   // Editor ref for imperative control
   const editorRef = useRef<CrepeEditorHandle>(null);
@@ -218,6 +223,35 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
     console.log('Share created:', shareData);
     // TODO: Show success toast notification
     setShareModalOpen(false);
+  };
+
+  // Files browse handlers
+  const handleFilesBrowseClick = () => {
+    setFilesBrowseModalOpen(true);
+  };
+
+  const handleFileSelect = (file: MediaFile) => {
+    if (!editorRef.current) return;
+    
+    // Insert markdown based on file type
+    let markdown = '';
+    if (file.mime_type.startsWith('image/')) {
+      // Insert image markdown
+      markdown = `![${file.alt_text || file.original_name}](${file.url})`;
+    } else {
+      // Insert link markdown for documents
+      markdown = `[${file.original_name}](${file.url})`;
+    }
+    
+    // Get current content and cursor position (append at the end for now)
+    const currentContent = editorRef.current.getContent();
+    const newContent = currentContent ? `${currentContent}\n\n${markdown}` : markdown;
+    
+    // Set the new content
+    editorRef.current.setContent(newContent);
+    
+    // Trigger auto-save
+    handleContentChange(newContent);
   };
 
   // Handle ESC key to exit fullscreen and Ctrl+S to save
@@ -408,6 +442,16 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
                 Reload
               </button>
               <button
+                onClick={handleFilesBrowseClick}
+                className="btn btn-ghost btn-sm"
+                title="Browse Files"
+                aria-label="Browse files"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+              </button>
+              <button
                 onClick={handleShareClick}
                 className="btn btn-ghost btn-sm"
                 title="Share Document"
@@ -497,6 +541,16 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
                 aria-label="Reload document"
               >
                 Reload
+              </button>
+              <button
+                onClick={handleFilesBrowseClick}
+                className="btn btn-ghost btn-sm"
+                title="Browse Files"
+                aria-label="Browse files"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
               </button>
               <button
                 onClick={handleShareClick}
@@ -594,6 +648,13 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
         documentId={documentId}
         documentName={document?.title || 'Untitled Document'}
         onShareCreated={handleShareCreated}
+      />
+
+      {/* Files Browse Modal */}
+      <FilesBrowseModal
+        isOpen={filesBrowseModalOpen}
+        onClose={() => setFilesBrowseModalOpen(false)}
+        onFileSelect={handleFileSelect}
       />
     </div>
   );

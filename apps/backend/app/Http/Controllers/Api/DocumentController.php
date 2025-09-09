@@ -524,7 +524,7 @@ class DocumentController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
-        if (!$doc) {
+        if (! $doc) {
             return response()->json(['message' => 'Document not found'], 404);
         }
 
@@ -620,7 +620,7 @@ class DocumentController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
-        if (!$doc) {
+        if (! $doc) {
             return response()->json(['message' => 'Document not found in trash'], 404);
         }
 
@@ -661,7 +661,7 @@ class DocumentController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
-        if (!$doc) {
+        if (! $doc) {
             return response()->json(['message' => 'Document not found in trash'], 404);
         }
 

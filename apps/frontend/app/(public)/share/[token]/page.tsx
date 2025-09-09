@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { env } from '@/lib/config/env';
+import { marked } from 'marked';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github.css';
 
 interface DocumentData {
   id: string;
@@ -35,18 +38,49 @@ export default function PublicDocumentPage() {
   const [owner, setOwner] = useState<Owner | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [passwordRequired, setPasswordRequired] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
   const [settingsChanged, setSettingsChanged] = useState(false);
   const [changeMessage, setChangeMessage] = useState<string | null>(null);
 
   const token = params.token as string;
   const urlPassword = searchParams.get('password');
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchDocument = async (passwordAttempt?: string) => {
+  // Configure marked for synchronous parsing
+  marked.setOptions({
+    async: false,
+  });
+
+  // Memoized markdown parsing
+  const parsedMarkdown = useMemo(() => {
+    if (!document?.content || document.rendered_html) {
+      return null;
+    }
+    try {
+      return marked(document.content) as string;
+    } catch (error) {
+      console.error('Markdown parsing error:', error);
+      return null;
+    }
+  }, [document?.content, document?.rendered_html]);
+
+  // Function to highlight code blocks
+  const highlightCode = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        window.document.querySelectorAll('pre code').forEach((block) => {
+          if (!block.classList.contains('hljs')) {
+            hljs.highlightElement(block as HTMLElement);
+          }
+        });
+      }, 100);
+    }
+  }, []);
+
+  const fetchDocument = useCallback(async (passwordAttempt?: string) => {
     try {
       setLoading(true);
       setPasswordError(null);
@@ -64,7 +98,6 @@ export default function PublicDocumentPage() {
       });
 
       if (response.status === 401) {
-        setPasswordRequired(true);
         setShowPasswordForm(true);
         setLoading(false);
         return;
@@ -90,16 +123,15 @@ export default function PublicDocumentPage() {
       setShareSettings(data.share_settings);
       setOwner(data.owner);
       setError(null);
-      setPasswordRequired(false);
       setShowPasswordForm(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, urlPassword]);
 
-  const checkDocumentStatus = async () => {
+  const checkDocumentStatus = useCallback(async () => {
     try {
       const url = new URL(`${env.API_BASE_URL}/api/share/${token}`);
       if (urlPassword) {
@@ -181,34 +213,41 @@ export default function PublicDocumentPage() {
     } catch (err) {
       console.error('Status check failed:', err);
     }
-  };
+  }, [token, urlPassword, shareSettings]);
 
   useEffect(() => {
     if (token) {
       fetchDocument();
     }
-  }, [token, urlPassword]);
+  }, [token, urlPassword, fetchDocument]);
 
   useEffect(() => {
     if (document && !error && !loading && !showPasswordForm) {
       // Start periodic status checking every 30 seconds
-      const interval = setInterval(checkDocumentStatus, 30000);
-      setStatusCheckInterval(interval);
+      intervalRef.current = setInterval(checkDocumentStatus, 30000);
 
       return () => {
-        if (interval) {
-          clearInterval(interval);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
         }
       };
     }
     
     return () => {
-      if (statusCheckInterval) {
-        clearInterval(statusCheckInterval);
-        setStatusCheckInterval(null);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [document, error, loading, showPasswordForm, shareSettings]);
+  }, [document, error, loading, showPasswordForm, checkDocumentStatus]);
+
+  // Highlight code blocks when document content changes
+  useEffect(() => {
+    if (document && (document.rendered_html || parsedMarkdown)) {
+      highlightCode();
+    }
+  }, [document, document?.rendered_html, parsedMarkdown, highlightCode]);
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -484,8 +523,19 @@ export default function PublicDocumentPage() {
           <div className="card-body">
             {document.rendered_html ? (
               <div 
-                className="prose prose-lg max-w-none"
+                className="prose prose-lg max-w-none prose-headings:text-base-content prose-p:text-base-content prose-strong:text-base-content prose-code:text-base-content prose-pre:text-base-content prose-blockquote:text-base-content prose-li:text-base-content"
                 dangerouslySetInnerHTML={{ __html: document.rendered_html }}
+                style={{
+                  userSelect: shareSettings?.allow_copy ? 'text' : 'none',
+                  WebkitUserSelect: shareSettings?.allow_copy ? 'text' : 'none',
+                  MozUserSelect: shareSettings?.allow_copy ? 'text' : 'none',
+                  msUserSelect: shareSettings?.allow_copy ? 'text' : 'none'
+                }}
+              />
+            ) : parsedMarkdown ? (
+              <div 
+                className="prose prose-lg max-w-none prose-headings:text-base-content prose-p:text-base-content prose-strong:text-base-content prose-code:text-base-content prose-pre:text-base-content prose-blockquote:text-base-content prose-li:text-base-content"
+                dangerouslySetInnerHTML={{ __html: parsedMarkdown }}
                 style={{
                   userSelect: shareSettings?.allow_copy ? 'text' : 'none',
                   WebkitUserSelect: shareSettings?.allow_copy ? 'text' : 'none',
