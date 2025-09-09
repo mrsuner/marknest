@@ -5,6 +5,8 @@ import UncontrolledCrepeEditor, { CrepeEditorHandle } from './UncontrolledCrepeE
 import VersionHistory from './VersionHistory';
 import VersionComparison from './VersionComparison';
 import { useGetDocumentQuery, useUpdateDocumentMutation, type DocumentVersion } from '@/lib/store/api/documentsApi';
+import ShareModal from '@/components/modals/ShareModal';
+import { type DocumentShare } from '@/lib/store/api/documentSharesApi';
 
 interface DocumentEditorProps {
   documentId: string;
@@ -59,6 +61,9 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
   const [showVersionComparison, setShowVersionComparison] = useState(false);
   const [selectedVersionForComparison, setSelectedVersionForComparison] = useState<DocumentVersion | null>(null);
   const [previewVersion, setPreviewVersion] = useState<DocumentVersion | null>(null);
+  
+  // Share modal states
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   
   // Editor ref for imperative control
   const editorRef = useRef<CrepeEditorHandle>(null);
@@ -202,6 +207,17 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
   const handleCloseVersionComparison = () => {
     setShowVersionComparison(false);
     setSelectedVersionForComparison(null);
+  };
+
+  // Share handlers
+  const handleShareClick = () => {
+    setShareModalOpen(true);
+  };
+
+  const handleShareCreated = (shareData: DocumentShare) => {
+    console.log('Share created:', shareData);
+    // TODO: Show success toast notification
+    setShareModalOpen(false);
   };
 
   // Handle ESC key to exit fullscreen and Ctrl+S to save
@@ -392,6 +408,16 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
                 Reload
               </button>
               <button
+                onClick={handleShareClick}
+                className="btn btn-ghost btn-sm"
+                title="Share Document"
+                aria-label="Share document"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15V3m0 0l-4 4m4-4l4 4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17" />
+                </svg>
+              </button>
+              <button
                 onClick={handleShowVersionHistory}
                 className="btn btn-ghost btn-sm"
                 title="Version History"
@@ -473,6 +499,16 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
                 Reload
               </button>
               <button
+                onClick={handleShareClick}
+                className="btn btn-ghost btn-sm"
+                title="Share Document"
+                aria-label="Share document"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15V3m0 0l-4 4m4-4l4 4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17" />
+                </svg>
+              </button>
+              <button
                 onClick={handleShowVersionHistory}
                 className="btn btn-ghost btn-sm"
                 title="Version History"
@@ -550,6 +586,15 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
           onClose={handleCloseVersionComparison}
         />
       )}
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        documentId={documentId}
+        documentName={document?.title || 'Untitled Document'}
+        onShareCreated={handleShareCreated}
+      />
     </div>
   );
 }

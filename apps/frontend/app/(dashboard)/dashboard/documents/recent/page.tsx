@@ -2,8 +2,11 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useGetRecentQuery } from '@/lib/store/api/documentsApi';
+import { useRouter } from 'next/navigation';
+import { useGetRecentQuery, useDuplicateDocumentMutation, useDeleteDocumentMutation } from '@/lib/store/api/documentsApi';
 import { Document } from '@/lib/store/api/api';
+import { type DocumentShare } from '@/lib/store/api/documentSharesApi';
+import ShareModal from '@/components/modals/ShareModal';
 
 
 
@@ -26,10 +29,20 @@ function truncateContent(content: string, maxLength: number = 150) {
 }
 
 export default function RecentDocumentsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'updated_at' | 'title' | 'word_count' | 'created_at'>('updated_at');
   const [currentPage, setCurrentPage] = useState(1);
   const [documentsPerPage, setDocumentsPerPage] = useState(9);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareDocumentId, setShareDocumentId] = useState<string | null>(null);
+  const [shareDocumentName, setShareDocumentName] = useState<string>('');
+  const [duplicateDocument, { isLoading: isDuplicating }] = useDuplicateDocumentMutation();
+  const [deleteDocument] = useDeleteDocumentMutation();
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirmName, setDeleteConfirmName] = useState<string>('');
+  const [duplicateConfirmId, setDuplicateConfirmId] = useState<string | null>(null);
+  const [duplicateConfirmName, setDuplicateConfirmName] = useState<string>('');
 
   // API query parameters
   const queryParams = useMemo(() => ({
@@ -59,6 +72,67 @@ export default function RecentDocumentsPage() {
   const handleSortChange = (value: 'updated_at' | 'title' | 'word_count' | 'created_at') => {
     setSortBy(value);
     setCurrentPage(1);
+  };
+
+  // Handle share action
+  const handleShare = (document: Document) => {
+    setShareDocumentId(document.id);
+    setShareDocumentName(document.title);
+    setShareModalOpen(true);
+  };
+
+  // Handle duplicate action - show confirmation
+  const handleDuplicate = (document: Document) => {
+    setDuplicateConfirmId(document.id);
+    setDuplicateConfirmName(document.title);
+  };
+
+  // Handle duplicate confirmation
+  const handleDuplicateConfirm = async () => {
+    if (!duplicateConfirmId) return;
+    
+    try {
+      const result = await duplicateDocument(duplicateConfirmId).unwrap();
+      // Navigate to the duplicated document
+      router.push(`/dashboard/documents/${result.data.id}/edit`);
+      setDuplicateConfirmId(null);
+      setDuplicateConfirmName('');
+    } catch (error) {
+      console.error('Failed to duplicate document:', error);
+      // TODO: Show error toast notification
+      setDuplicateConfirmId(null);
+      setDuplicateConfirmName('');
+    }
+  };
+
+  // Handle share created callback
+  const handleShareCreated = (shareData: DocumentShare) => {
+    console.log('Share created:', shareData);
+    // TODO: Show success toast notification
+    setShareModalOpen(false);
+    setShareDocumentId(null);
+    setShareDocumentName('');
+  };
+
+  // Handle delete action
+  const handleDelete = (document: Document) => {
+    setDeleteConfirmId(document.id);
+    setDeleteConfirmName(document.title);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirmId) return;
+    
+    try {
+      await deleteDocument(deleteConfirmId).unwrap();
+      // TODO: Show success toast notification
+      setDeleteConfirmId(null);
+      setDeleteConfirmName('');
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      // TODO: Show error toast notification
+    }
   };
 
   // Loading and error states
@@ -231,10 +305,41 @@ export default function RecentDocumentsPage() {
                 </div>
                 <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-48 border border-base-300 z-10">
                   <li><button onClick={() => window.location.href = `/dashboard/documents/${document.id}/edit`}>Edit</button></li>
-                  <li><button>Duplicate</button></li>
-                  <li><button>Share</button></li>
+                  <li>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDuplicate(document);
+                      }}
+                    >
+                      Duplicate
+                    </button>
+                  </li>
+                  <li>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleShare(document);
+                      }}
+                    >
+                      Share
+                    </button>
+                  </li>
                   <li><hr className="my-1" /></li>
-                  <li><button className="text-error">Delete</button></li>
+                  <li>
+                    <button 
+                      className="text-error"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDelete(document);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -332,6 +437,84 @@ export default function RecentDocumentsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
               </svg>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {shareDocumentId && shareDocumentName && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setShareDocumentId(null);
+            setShareDocumentName('');
+          }}
+          documentId={shareDocumentId}
+          documentName={shareDocumentName}
+          onShareCreated={handleShareCreated}
+        />
+      )}
+
+      {/* Duplicate Confirmation Modal */}
+      {duplicateConfirmId && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Duplicate Document</h3>
+            <p className="mb-4">
+              Are you sure you want to create a duplicate of &ldquo;{duplicateConfirmName}&rdquo;?
+            </p>
+            <p className="text-sm text-base-content/60 mb-4">
+              A new document titled &ldquo;Copy of {duplicateConfirmName}&rdquo; will be created and you&apos;ll be redirected to edit it.
+            </p>
+            <div className="modal-action">
+              <button 
+                onClick={() => {
+                  setDuplicateConfirmId(null);
+                  setDuplicateConfirmName('');
+                }} 
+                className="btn"
+                disabled={isDuplicating}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDuplicateConfirm} 
+                className="btn btn-primary"
+                disabled={isDuplicating}
+              >
+                {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Confirm Deletion</h3>
+            <p className="mb-4">
+              Are you sure you want to delete &ldquo;{deleteConfirmName}&rdquo;? This action cannot be undone.
+            </p>
+            <div className="modal-action">
+              <button 
+                onClick={() => {
+                  setDeleteConfirmId(null);
+                  setDeleteConfirmName('');
+                }} 
+                className="btn"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteConfirm} 
+                className="btn btn-error"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

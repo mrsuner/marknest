@@ -12,6 +12,7 @@ import {
   useDeleteDocumentMutation,
   type FolderContentsItem
 } from '@/lib/store/api/api';
+import { useDuplicateDocumentMutation } from '@/lib/store/api/documentsApi';
 import {
   setViewMode,
   setCurrentFolder,
@@ -30,6 +31,7 @@ import {
 } from '@/lib/store/slices/uiSlice';
 import { useState } from 'react';
 import ShareModal from '@/components/modals/ShareModal';
+import { type DocumentShare } from '@/lib/store/api/documentSharesApi';
 
 export default function DocumentsPage() {
   const router = useRouter();
@@ -54,6 +56,8 @@ export default function DocumentsPage() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareDocumentId, setShareDocumentId] = useState<string | null>(null);
   const [shareDocumentName, setShareDocumentName] = useState<string>('');
+  const [duplicateConfirmId, setDuplicateConfirmId] = useState<string | null>(null);
+  const [duplicateConfirmName, setDuplicateConfirmName] = useState<string>('');
 
   // RTK Query hooks
   const {
@@ -67,6 +71,7 @@ export default function DocumentsPage() {
   const [createDocument, { isLoading: isCreatingDocument }] = useCreateDocumentMutation();
   const [deleteFolder] = useDeleteFolderMutation();
   const [deleteDocument] = useDeleteDocumentMutation();
+  const [duplicateDocument, { isLoading: isDuplicating }] = useDuplicateDocumentMutation();
   
   const [searchFolders, { data: searchResults, isLoading: isSearching }] = useLazySearchFoldersQuery();
 
@@ -229,10 +234,38 @@ export default function DocumentsPage() {
     }
   };
 
-  const handleShareCreated = (shareData: any) => {
+  const handleShareCreated = (shareData: DocumentShare) => {
     console.log('Share created:', shareData);
     // TODO: Show success toast notification
     // TODO: Navigate to shared links page or refresh data
+  };
+
+  const handleDuplicateClick = () => {
+    if (selectedItems.length === 1) {
+      const selectedItem = items.find(item => item.id === selectedItems[0]);
+      if (selectedItem && selectedItem.type === 'document') {
+        setDuplicateConfirmId(selectedItem.id);
+        setDuplicateConfirmName(selectedItem.name);
+      }
+    }
+  };
+
+  const handleDuplicateConfirm = async () => {
+    if (!duplicateConfirmId) return;
+    
+    try {
+      const result = await duplicateDocument(duplicateConfirmId).unwrap();
+      // Navigate to the duplicated document
+      router.push(`/dashboard/documents/${result.data.id}/edit`);
+      setDuplicateConfirmId(null);
+      setDuplicateConfirmName('');
+      dispatch(clearSelection());
+    } catch (error) {
+      console.error('Failed to duplicate document:', error);
+      // TODO: Show error toast notification
+      setDuplicateConfirmId(null);
+      setDuplicateConfirmName('');
+    }
   };
 
   // Component icons
@@ -385,9 +418,22 @@ export default function DocumentsPage() {
                        "Create share link"}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 0A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15V3m0 0l-4 4m4-4l4 4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17" />
                 </svg>
                 Share
+              </button>
+              <button 
+                onClick={handleDuplicateClick}
+                className="btn btn-sm btn-ghost"
+                disabled={selectedItems.length !== 1 || (selectedItems.length === 1 && items.find(item => item.id === selectedItems[0])?.type !== 'document')}
+                title={selectedItems.length !== 1 ? "Select exactly one document to duplicate" : 
+                       items.find(item => item.id === selectedItems[0])?.type !== 'document' ? "Only documents can be duplicated" : 
+                       "Duplicate document"}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Duplicate
               </button>
               <button onClick={handleDeleteSelected} className="btn btn-sm btn-ghost text-error">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -672,6 +718,40 @@ export default function DocumentsPage() {
           documentName={shareDocumentName}
           onShareCreated={handleShareCreated}
         />
+      )}
+
+      {/* Duplicate Confirmation Modal */}
+      {duplicateConfirmId && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Duplicate Document</h3>
+            <p className="mb-4">
+              Are you sure you want to create a duplicate of &ldquo;{duplicateConfirmName}&rdquo;?
+            </p>
+            <p className="text-sm text-base-content/60 mb-4">
+              A new document titled &ldquo;Copy of {duplicateConfirmName}&rdquo; will be created and you&apos;ll be redirected to edit it.
+            </p>
+            <div className="modal-action">
+              <button 
+                onClick={() => {
+                  setDuplicateConfirmId(null);
+                  setDuplicateConfirmName('');
+                }} 
+                className="btn"
+                disabled={isDuplicating}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDuplicateConfirm} 
+                className="btn btn-primary"
+                disabled={isDuplicating}
+              >
+                {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

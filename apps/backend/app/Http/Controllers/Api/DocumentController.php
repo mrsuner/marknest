@@ -505,4 +505,99 @@ class DocumentController extends Controller
         ]);
     }
 
+    /**
+     * Duplicate an existing document
+     * Creates a new document with the same content but prefixed with "Copy of" in title
+     * Preserves folder location, tags, and other metadata but resets versioning
+     * Returns the newly created duplicate document
+     */
+    public function duplicate(Request $request, Document $document): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // Ensure the document belongs to the user
+        if ($document->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Document not found'
+            ], 404);
+        }
+        
+        $validated = $request->validate([
+            'title' => 'sometimes|string|max:255',
+            'folder_id' => 'sometimes|nullable|exists:folders,id'
+        ]);
+        
+        // Generate new title (use provided title or add "Copy of" prefix)
+        $newTitle = $validated['title'] ?? 'Copy of ' . $document->title;
+        
+        // Use provided folder_id or keep the same as original
+        $folderId = isset($validated['folder_id']) ? $validated['folder_id'] : $document->folder_id;
+        
+        // Validate folder belongs to user if provided
+        if ($folderId) {
+            $user->folders()->findOrFail($folderId);
+        }
+        
+        $duplicatedDocument = DB::transaction(function () use ($document, $user, $newTitle, $folderId) {
+            // Create the duplicate document
+            $duplicate = Document::create([
+                'title' => $newTitle,
+                'slug' => '', // Will be set to ID after creation
+                'content' => $document->content,
+                'rendered_html' => $document->rendered_html,
+                'user_id' => $user->id,
+                'folder_id' => $folderId,
+                'size' => $document->size,
+                'word_count' => $document->word_count,
+                'character_count' => $document->character_count,
+                'version_number' => 1,
+                'tags' => $document->tags,
+                'metadata' => $document->metadata,
+                'status' => 'draft', // Reset to draft status
+                'is_favorite' => false, // Reset favorite status
+                'is_archived' => false,
+                'is_trashed' => false,
+                'last_accessed_at' => now()
+            ]);
+            
+            // Set slug to document ID
+            $duplicate->update(['slug' => $duplicate->id]);
+            
+            // Create initial version for the duplicate
+            DocumentVersion::create([
+                'document_id' => $duplicate->id,
+                'user_id' => $user->id,
+                'version_number' => 1,
+                'title' => $duplicate->title,
+                'content' => $duplicate->content,
+                'rendered_html' => $duplicate->rendered_html,
+                'size' => $duplicate->size,
+                'word_count' => $duplicate->word_count,
+                'character_count' => $duplicate->character_count,
+                'change_summary' => 'Duplicated from document: ' . $document->title,
+                'operation' => 'create',
+                'is_auto_save' => false,
+                'created_at' => now()
+            ]);
+            
+            return $duplicate;
+        });
+        
+        return response()->json([
+            'data' => [
+                'id' => $duplicatedDocument->id,
+                'title' => $duplicatedDocument->title,
+                'slug' => $duplicatedDocument->slug,
+                'content' => $duplicatedDocument->content,
+                'folder_id' => $duplicatedDocument->folder_id,
+                'version_number' => $duplicatedDocument->version_number,
+                'status' => $duplicatedDocument->status,
+                'tags' => $duplicatedDocument->tags,
+                'created_at' => $duplicatedDocument->created_at,
+                'updated_at' => $duplicatedDocument->updated_at
+            ],
+            'message' => 'Document duplicated successfully'
+        ], 201);
+    }
+
 }

@@ -44,6 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('{document}', [DocumentController::class, 'show']);
         Route::put('{document}', [DocumentController::class, 'update']);
         Route::delete('{document}', [DocumentController::class, 'destroy']);
+        Route::post('{document}/duplicate', [DocumentController::class, 'duplicate']);
         
         // Version management
         Route::get('{document}/versions', [DocumentController::class, 'getVersions']);
