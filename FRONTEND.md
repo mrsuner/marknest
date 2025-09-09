@@ -25,12 +25,14 @@ Large components must be refactored into smaller, single-responsibility componen
 ## Folder Structure Convention
 
 ### Philosophy
+
 - Feature-first: group code by feature (users, orders, etc.).  
 - UI vs. Domain separation: UI for rendering, Domain for state and data.  
 - App Router groups: use (public), (auth), (dashboard), etc.  
 - Shared: cross-feature utilities and primitives in /shared.  
 
 ### Structure
+
 - | app/  
   - | (public)/  
     - | page.tsx  
@@ -40,32 +42,31 @@ Large components must be refactored into smaller, single-responsibility componen
   - | (dashboard)/  
     - | users/  
       - | page.tsx (thin orchestration)  
-      - | layout.tsx  
-- | src/  
-  - | app/  
-    - | providers/StoreProvider.tsx  
-    - | styles/globals.css  
-  - | shared/  
-    - | ui/ (shared primitives like Button, Modal)  
-    - | lib/ (helpers, fetchers, validators)  
-    - | types/ (cross-feature types)  
-  - | features/  
-    - | users/  
-      - | domain/  
-        - | users.api.ts (RTK Query endpoints)  
-        - | users.slice.ts (Redux slice if needed)  
-        - | users.hooks.ts (business hooks)  
-        - | users.selectors.ts  
-        - | users.types.ts  
-      - | ui/  
-        - | UsersTable.tsx  
-        - | UserRow.tsx  
-        - | UsersEmpty.tsx  
-        - | UsersError.tsx  
-      - | index.ts (barrel export)  
-  - | store/  
-    - | baseApi.ts  
-    - | store.ts  
+      - | layout.tsx    
+  - | providers/StoreProvider.tsx  
+  - | globals.css  
+- | shared/  
+  - | ui/ (shared primitives like Button, Modal)  
+  - | lib/ (helpers, fetchers, validators)  
+  - | types/ (cross-feature types)  
+  - | config/ (app-wide config)
+- | features/  
+  - | users/  
+    - | domain/  
+      - | users.api.ts (RTK Query endpoints)  
+      - | users.slice.ts (Redux slice if needed)  
+      - | users.hooks.ts (business hooks)  
+      - | users.selectors.ts  
+      - | users.types.ts  
+    - | ui/  
+      - | users-table.tsx  
+      - | user-row.tsx  
+      - | users-empty.tsx  
+      - | users-error.tsx  
+    - | index.ts (barrel export)  
+- | store/  
+  - | baseApi.ts  
+  - | store.ts  
 
 ## Rules for AI Code Generation
 
