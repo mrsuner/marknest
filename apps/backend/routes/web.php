@@ -12,3 +12,7 @@ Route::post(
     'stripe/webhook',
     [WebhookController::class, 'handleWebhook']
 )->name('cashier.webhook');
+
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok'], 200);
+});

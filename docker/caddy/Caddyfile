@@ -1,0 +1,24 @@
+# Marknest Laravel FastCGI Configuration
+
+# Main application
+:80 {
+    # All requests go to index.php for Laravel routing
+    reverse_proxy app:9000 {
+        transport fastcgi {
+            root /var/www/html/public
+            env SCRIPT_FILENAME /var/www/html/public/index.php
+            env REQUEST_URI {uri}
+            env QUERY_STRING {query}
+        }
+    }
+
+    # Enable access logging
+    log {
+        output file /var/log/caddy/access.log
+    }
+}
+
+# RabbitMQ Management UI (disabled)
+# :8080 {
+#     reverse_proxy rabbitmq:15672
+# }

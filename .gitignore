@@ -50,3 +50,6 @@ dist/
 build/
 .next/
 out/
+
+docker/bootstrap
+docker/storage
