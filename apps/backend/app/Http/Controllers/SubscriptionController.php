@@ -141,7 +141,7 @@ class SubscriptionController extends Controller
     public function subscribe(Request $request): JsonResponse
     {
         $request->validate([
-            'plan' => 'required|string|in:pro,enterprise',
+            'plan' => 'required|string|in:pro,max',
             'billing_cycle' => 'required|string|in:monthly,yearly',
             'payment_method' => 'required_if:trial,false|string',
         ]);
@@ -192,7 +192,7 @@ class SubscriptionController extends Controller
                 'document_limit' => $limits['document_limit'],
                 'storage_limit' => $limits['storage_limit'],
                 'links_limit' => $limits['links_limit'],
-                'version_history_days' => $limits['version_history_days'],
+                'version_limit' => $limits['version_limit'],
                 'can_share_public' => true,
                 'can_password_protect' => $plan !== 'free',
             ]);
@@ -221,7 +221,7 @@ class SubscriptionController extends Controller
     public function changePlan(Request $request): JsonResponse
     {
         $request->validate([
-            'plan' => 'required|string|in:pro,enterprise',
+            'plan' => 'required|string|in:pro,max',
             'billing_cycle' => 'required|string|in:monthly,yearly',
         ]);
 
@@ -258,7 +258,7 @@ class SubscriptionController extends Controller
                 'document_limit' => $limits['document_limit'],
                 'storage_limit' => $limits['storage_limit'],
                 'links_limit' => $limits['links_limit'],
-                'version_history_days' => $limits['version_history_days'],
+                'version_limit' => $limits['version_limit'],
                 'can_password_protect' => true,
             ]);
 

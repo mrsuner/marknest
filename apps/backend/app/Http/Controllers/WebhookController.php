@@ -48,7 +48,7 @@ class WebhookController extends CashierWebhookController
                 'document_limit' => config('subscriptions.plans.free.limits.document_limit'),
                 'storage_limit' => config('subscriptions.plans.free.limits.storage_limit'),
                 'links_limit' => config('subscriptions.plans.free.limits.links_limit'),
-                'version_history_days' => config('subscriptions.plans.free.limits.version_history_days'),
+                'version_limit' => config('subscriptions.plans.free.limits.version_limit'),
                 'can_password_protect' => false,
             ]);
 
@@ -164,8 +164,8 @@ class WebhookController extends CashierWebhookController
         $priceIdToPlan = [
             config('subscriptions.plans.pro.stripe_price_monthly') => 'pro',
             config('subscriptions.plans.pro.stripe_price_yearly') => 'pro',
-            config('subscriptions.plans.enterprise.stripe_price_monthly') => 'enterprise',
-            config('subscriptions.plans.enterprise.stripe_price_yearly') => 'enterprise',
+            config('subscriptions.plans.max.stripe_price_monthly') => 'max',
+            config('subscriptions.plans.max.stripe_price_yearly') => 'max',
         ];
 
         $priceId = $subscription['items']['data'][0]['price']['id'] ?? null;
@@ -180,7 +180,7 @@ class WebhookController extends CashierWebhookController
                 'document_limit' => $limits['document_limit'],
                 'storage_limit' => $limits['storage_limit'],
                 'links_limit' => $limits['links_limit'],
-                'version_history_days' => $limits['version_history_days'],
+                'version_limit' => $limits['version_limit'],
                 'can_password_protect' => $plan !== 'free',
             ]);
         } elseif (in_array($subscription['status'], ['canceled', 'unpaid', 'past_due'])) {
@@ -190,7 +190,7 @@ class WebhookController extends CashierWebhookController
                 'document_limit' => config('subscriptions.plans.free.limits.document_limit'),
                 'storage_limit' => config('subscriptions.plans.free.limits.storage_limit'),
                 'links_limit' => config('subscriptions.plans.free.limits.links_limit'),
-                'version_history_days' => config('subscriptions.plans.free.limits.version_history_days'),
+                'version_limit' => config('subscriptions.plans.free.limits.version_limit'),
                 'can_password_protect' => false,
             ]);
         }

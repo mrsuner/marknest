@@ -134,7 +134,7 @@ class SubscriptionService
             'document_limit' => $limits['document_limit'],
             'storage_limit' => $limits['storage_limit'],
             'links_limit' => $limits['links_limit'],
-            'version_history_days' => $limits['version_history_days'],
+            'version_limit' => $limits['version_limit'],
             'can_share_public' => true,
             'can_password_protect' => $plan !== 'free',
         ]);
