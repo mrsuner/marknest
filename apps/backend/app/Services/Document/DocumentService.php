@@ -44,13 +44,17 @@ class DocumentService
                 'word_count' => str_word_count(strip_tags($content)),
                 'character_count' => strlen($content),
                 'version_number' => 1,
-                'tags' => $data['tags'] ?? [],
                 'status' => $data['status'] ?? 'draft',
                 'last_accessed_at' => now(),
             ]);
 
             // Set slug to document ID
             $doc->update(['slug' => $doc->id]);
+
+            // Sync tags if provided (expects array of tag IDs)
+            if (! empty($data['tags'])) {
+                $doc->tags()->sync($data['tags']);
+            }
 
             // Create initial version
             DocumentVersion::create([
@@ -111,12 +115,13 @@ class DocumentService
                 $updateData['folder_id'] = $data['folder_id'];
             }
 
-            if (isset($data['tags'])) {
-                $updateData['tags'] = $data['tags'];
-            }
-
             if (isset($data['status'])) {
                 $updateData['status'] = $data['status'];
+            }
+
+            // Sync tags if provided (expects array of tag IDs)
+            if (array_key_exists('tags', $data)) {
+                $document->tags()->sync($data['tags'] ?? []);
             }
 
             // Create version if content or title changed
@@ -162,7 +167,7 @@ class DocumentService
     {
         $doc = Document::where('id', $documentId)
             ->where('user_id', $user->id)
-            ->with(['folder', 'versions' => function ($query) {
+            ->with(['folder', 'tags', 'versions' => function ($query) {
                 $query->orderBy('version_number', 'desc')->limit(5);
             }])
             ->first();
@@ -191,7 +196,7 @@ class DocumentService
 
         $query = Document::where('user_id', $user->id)
             ->where('is_archived', false)
-            ->with('folder:id,name,path');
+            ->with(['folder:id,name,path', 'tags:id,name,slug']);
 
         // Apply search filter if provided
         if ($search) {
@@ -246,17 +251,18 @@ class DocumentService
                 'word_count' => $document->word_count,
                 'character_count' => $document->character_count,
                 'version_number' => 1,
-                'tags' => $document->tags,
                 'metadata' => $document->metadata,
                 'status' => 'draft', // Reset to draft status
                 'is_favorite' => false, // Reset favorite status
                 'is_archived' => false,
-                'is_trashed' => false,
                 'last_accessed_at' => now(),
             ]);
 
             // Set slug to document ID
             $duplicate->update(['slug' => $duplicate->id]);
+
+            // Copy tags from original document
+            $duplicate->tags()->sync($document->tags->pluck('id'));
 
             // Create initial version for the duplicate
             DocumentVersion::create([

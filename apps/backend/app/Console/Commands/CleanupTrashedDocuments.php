@@ -64,6 +64,9 @@ class CleanupTrashedDocuments extends Command
                     // Detach media files
                     $document->mediaFiles()->detach();
 
+                    // Detach tags
+                    $document->tags()->detach();
+
                     // Force delete the document
                     $document->forceDelete();
 

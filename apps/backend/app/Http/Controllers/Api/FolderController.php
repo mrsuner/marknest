@@ -348,7 +348,118 @@ class FolderController extends Controller
         $folder->delete();
 
         return response()->json([
-            'message' => 'Folder deleted successfully',
+            'message' => 'Folder moved to trash successfully',
+        ]);
+    }
+
+    /**
+     * Get all trashed folders for the authenticated user
+     *
+     * @group Folders
+     *
+     * @authenticated
+     *
+     * @return JsonResponse JSON response with paginated trashed folders
+     */
+    public function getTrashed(): JsonResponse
+    {
+        $user = Auth::user();
+        $perPage = request()->input('per_page', 10);
+
+        $folders = Folder::onlyTrashed()
+            ->where('user_id', $user->id)
+            ->withCount('documents')
+            ->orderBy('deleted_at', 'desc')
+            ->paginate($perPage);
+
+        return response()->json([
+            'data' => $folders->map(function ($folder) {
+                return [
+                    'id' => $folder->id,
+                    'name' => $folder->name,
+                    'path' => $folder->path,
+                    'documents_count' => $folder->documents_count,
+                    'deleted_at' => $folder->deleted_at,
+                    'days_until_permanent_deletion' => max(0, 90 - floor($folder->deleted_at->diffInDays(now()))),
+                    'created_at' => $folder->created_at,
+                    'updated_at' => $folder->updated_at,
+                ];
+            }),
+            'meta' => [
+                'current_page' => $folders->currentPage(),
+                'last_page' => $folders->lastPage(),
+                'per_page' => $folders->perPage(),
+                'total' => $folders->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Restore a trashed folder
+     *
+     * @group Folders
+     *
+     * @authenticated
+     *
+     * @param  string  $folderId  Folder ID to restore
+     * @return JsonResponse JSON response with success message
+     */
+    public function restore(string $folderId): JsonResponse
+    {
+        $user = Auth::user();
+
+        $folder = Folder::onlyTrashed()
+            ->where('id', $folderId)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $folder) {
+            return response()->json(['message' => 'Folder not found in trash'], 404);
+        }
+
+        // Restore the folder and all its children
+        $folder->restore();
+        $this->restoreRecursive($folder);
+
+        return response()->json([
+            'message' => 'Folder restored successfully',
+            'data' => [
+                'id' => $folder->id,
+                'name' => $folder->name,
+                'path' => $folder->path,
+            ],
+        ]);
+    }
+
+    /**
+     * Permanently delete a trashed folder
+     *
+     * @group Folders
+     *
+     * @authenticated
+     *
+     * @param  string  $folderId  Folder ID to permanently delete
+     * @return JsonResponse JSON response with success message
+     */
+    public function forceDelete(string $folderId): JsonResponse
+    {
+        $user = Auth::user();
+
+        $folder = Folder::onlyTrashed()
+            ->where('id', $folderId)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $folder) {
+            return response()->json(['message' => 'Folder not found in trash'], 404);
+        }
+
+        // Permanently delete folder and all contents
+        $this->forceDeleteRecursive($folder);
+        $folder->forceDelete();
+
+        return response()->json([
+            'message' => 'Folder permanently deleted',
         ]);
     }
 
@@ -518,18 +629,59 @@ class FolderController extends Controller
     }
 
     /**
-     * Helper: Recursively delete folder contents
+     * Helper: Recursively delete folder contents (soft delete)
      */
     private function deleteRecursive(Folder $folder): void
     {
-        // Delete all documents in this folder
+        // Soft delete all documents in this folder
         Document::where('folder_id', $folder->id)->delete();
 
-        // Recursively delete child folders
+        // Recursively soft delete child folders
         $children = Folder::where('parent_id', $folder->id)->get();
         foreach ($children as $child) {
             $this->deleteRecursive($child);
             $child->delete();
+        }
+    }
+
+    /**
+     * Helper: Recursively restore folder children
+     */
+    private function restoreRecursive(Folder $folder): void
+    {
+        // Restore documents in this folder
+        Document::onlyTrashed()->where('folder_id', $folder->id)->restore();
+
+        // Restore child folders that were soft deleted
+        $children = Folder::onlyTrashed()->where('parent_id', $folder->id)->get();
+        foreach ($children as $child) {
+            $child->restore();
+            $this->restoreRecursive($child);
+        }
+    }
+
+    /**
+     * Helper: Recursively force delete folder contents
+     */
+    private function forceDeleteRecursive(Folder $folder): void
+    {
+        // Force delete all documents in this folder (including trashed)
+        $documents = Document::withTrashed()->where('folder_id', $folder->id)->get();
+        foreach ($documents as $document) {
+            // Clean up document relations before force delete
+            $document->versions()->delete();
+            $document->shares()->delete();
+            $document->collaborators()->delete();
+            $document->mediaFiles()->detach();
+            $document->tags()->detach();
+            $document->forceDelete();
+        }
+
+        // Recursively force delete child folders
+        $children = Folder::withTrashed()->where('parent_id', $folder->id)->get();
+        foreach ($children as $child) {
+            $this->forceDeleteRecursive($child);
+            $child->forceDelete();
         }
     }
 

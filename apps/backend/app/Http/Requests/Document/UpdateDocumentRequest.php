@@ -26,6 +26,7 @@ class UpdateDocumentRequest extends FormRequest
             'content' => 'sometimes|string',
             'folder_id' => 'sometimes|nullable|exists:folders,id',
             'tags' => 'sometimes|array',
+            'tags.*' => 'ulid|exists:tags,id',
             'status' => 'sometimes|in:draft,published',
             'is_auto_save' => 'sometimes|boolean',
             'change_summary' => 'sometimes|string|max:500',

@@ -59,6 +59,9 @@ class DocumentController extends Controller
 
         $document = $this->documentService->createDocument($validated, $user);
 
+        // Reload document with tags relationship
+        $document->load('tags');
+
         return response()->json([
             'data' => [
                 'id' => $document->id,
@@ -68,7 +71,11 @@ class DocumentController extends Controller
                 'folder_id' => $document->folder_id,
                 'version_number' => $document->version_number,
                 'status' => $document->status,
-                'tags' => $document->tags,
+                'tags' => $document->tags->map(fn ($tag) => [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'slug' => $tag->slug,
+                ]),
                 'created_at' => $document->created_at,
                 'updated_at' => $document->updated_at,
             ],
@@ -124,7 +131,11 @@ class DocumentController extends Controller
                 'version_number' => $doc->version_number,
                 'is_favorite' => $doc->is_favorite,
                 'is_archived' => $doc->is_archived,
-                'tags' => $doc->tags,
+                'tags' => $doc->tags->map(fn ($tag) => [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'slug' => $tag->slug,
+                ]),
                 'metadata' => $doc->metadata,
                 'status' => $doc->status,
                 'created_at' => $doc->created_at,
@@ -416,7 +427,11 @@ class DocumentController extends Controller
                     'size' => $doc->size,
                     'version_number' => $doc->version_number,
                     'is_favorite' => $doc->is_favorite,
-                    'tags' => $doc->tags,
+                    'tags' => $doc->tags->map(fn ($tag) => [
+                        'id' => $tag->id,
+                        'name' => $tag->name,
+                        'slug' => $tag->slug,
+                    ]),
                     'status' => $doc->status,
                     'created_at' => $doc->created_at,
                     'updated_at' => $doc->updated_at,
@@ -482,6 +497,9 @@ class DocumentController extends Controller
             $validated
         );
 
+        // Reload document with tags relationship
+        $duplicatedDocument->load('tags');
+
         return response()->json([
             'data' => [
                 'id' => $duplicatedDocument->id,
@@ -491,7 +509,11 @@ class DocumentController extends Controller
                 'folder_id' => $duplicatedDocument->folder_id,
                 'version_number' => $duplicatedDocument->version_number,
                 'status' => $duplicatedDocument->status,
-                'tags' => $duplicatedDocument->tags,
+                'tags' => $duplicatedDocument->tags->map(fn ($tag) => [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'slug' => $tag->slug,
+                ]),
                 'created_at' => $duplicatedDocument->created_at,
                 'updated_at' => $duplicatedDocument->updated_at,
             ],
@@ -558,7 +580,7 @@ class DocumentController extends Controller
 
         $documents = Document::onlyTrashed()
             ->where('user_id', $user->id)
-            ->with('folder:id,name,path')
+            ->with(['folder:id,name,path', 'tags:id,name,slug'])
             ->orderBy('deleted_at', 'desc')
             ->paginate($perPage);
 
@@ -577,7 +599,11 @@ class DocumentController extends Controller
                     'version_number' => $doc->version_number,
                     'is_favorite' => $doc->is_favorite,
                     'is_archived' => $doc->is_archived,
-                    'tags' => $doc->tags,
+                    'tags' => $doc->tags->map(fn ($tag) => [
+                        'id' => $tag->id,
+                        'name' => $tag->name,
+                        'slug' => $tag->slug,
+                    ]),
                     'status' => $doc->status,
                     'deleted_at' => $doc->deleted_at,
                     'days_until_permanent_deletion' => max(0, 30 - floor($doc->deleted_at->diffInDays(now()))),

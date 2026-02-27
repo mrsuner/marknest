@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DocumentShareController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserPreferenceController;
 use App\Http\Controllers\SubscriptionController;
@@ -35,6 +36,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('preferences', [UserPreferenceController::class, 'show']);
         Route::put('preferences', [UserPreferenceController::class, 'update']);
         Route::post('preferences/reset', [UserPreferenceController::class, 'reset']);
+    });
+
+    // Tag management
+    Route::prefix('tags')->group(function () {
+        Route::get('/', [TagController::class, 'index']);
+        Route::post('/', [TagController::class, 'store']);
+        Route::delete('{tag}', [TagController::class, 'destroy']);
     });
 
     // Document management
@@ -91,11 +99,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [FolderController::class, 'index']);
         Route::get('/contents', [FolderController::class, 'getContents']); // Root folder contents
         Route::get('/search', [FolderController::class, 'search']);
+        Route::get('/trashed', [FolderController::class, 'getTrashed']); // Trashed folders
         Route::post('/', [FolderController::class, 'store']);
         Route::get('{folder}', [FolderController::class, 'show']);
         Route::get('{folder}/contents', [FolderController::class, 'getContents']); // Specific folder contents
         Route::put('{folder}', [FolderController::class, 'update']);
         Route::delete('{folder}', [FolderController::class, 'destroy']);
+        Route::post('{folder}/restore', [FolderController::class, 'restore']); // Restore from trash
+        Route::delete('{folder}/force', [FolderController::class, 'forceDelete']); // Permanent delete
 
         // Folder hierarchy operations
         Route::post('{folder}/move', [FolderController::class, 'move']);

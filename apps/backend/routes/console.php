@@ -15,3 +15,11 @@ Schedule::command('documents:cleanup-trashed')
     ->withoutOverlapping()
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/cleanup-trashed-documents.log'));
+
+// Schedule automatic cleanup of trashed folders (90 days retention per features.md)
+Schedule::command('folders:cleanup-trashed')
+    ->daily()
+    ->at('02:30')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/cleanup-trashed-folders.log'));

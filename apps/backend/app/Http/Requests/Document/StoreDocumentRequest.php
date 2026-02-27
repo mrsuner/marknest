@@ -26,6 +26,7 @@ class StoreDocumentRequest extends FormRequest
             'content' => 'nullable|string',
             'folder_id' => 'sometimes|nullable|exists:folders,id',
             'tags' => 'sometimes|array',
+            'tags.*' => 'ulid|exists:tags,id',
             'status' => 'sometimes|in:draft,published',
         ];
     }
