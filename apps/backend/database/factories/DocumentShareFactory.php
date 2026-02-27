@@ -31,11 +31,10 @@ class DocumentShareFactory extends Factory
             'allow_download' => fake()->boolean(),
             'allow_copy' => fake()->boolean(),
             'show_watermark' => fake()->boolean(30),
-            'access_level' => fake()->randomElement(['read', 'comment', 'edit']),
+            'access_level' => 'read',
             'allowed_emails' => fake()->optional()->randomElements([
                 fake()->email(), fake()->email(), fake()->email(),
             ], rand(1, 3)),
-            'access_log' => [],
             'is_active' => true,
             'description' => fake()->optional()->sentence(),
         ];

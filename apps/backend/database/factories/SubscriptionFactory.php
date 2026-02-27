@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Plan;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -17,17 +18,21 @@ class SubscriptionFactory extends Factory
      */
     public function definition(): array
     {
-        $plan = fake()->randomElement(['free', 'pro', 'enterprise']);
+        $plan = fake()->randomElement(Plan::cases());
         $status = fake()->randomElement(['active', 'canceled', 'past_due', 'incomplete']);
 
         return [
             'user_id' => User::factory(),
-            'stripe_subscription_id' => 'sub_'.fake()->regexify('[A-Za-z0-9]{24}'),
+            'name' => 'default',
+            'stripe_id' => 'sub_'.fake()->regexify('[A-Za-z0-9]{24}'),
+            'stripe_status' => $status,
+            'stripe_price' => 'price_'.fake()->regexify('[A-Za-z0-9]{24}'),
+            'quantity' => 1,
             'stripe_customer_id' => 'cus_'.fake()->regexify('[A-Za-z0-9]{14}'),
             'stripe_price_id' => 'price_'.fake()->regexify('[A-Za-z0-9]{24}'),
-            'plan' => $plan,
+            'plan' => $plan->value,
             'status' => $status,
-            'amount' => $this->getAmountForPlan($plan),
+            'amount' => $this->getAmountForPlan($plan->value),
             'currency' => 'USD',
             'interval' => fake()->randomElement(['month', 'year']),
             'interval_count' => 1,
@@ -36,8 +41,8 @@ class SubscriptionFactory extends Factory
             'current_period_end' => fake()->dateTimeBetween('now', '+1 month'),
             'canceled_at' => $status === 'canceled' ? fake()->dateTimeBetween('-1 month', 'now') : null,
             'ends_at' => $status === 'canceled' ? fake()->dateTimeBetween('now', '+1 month') : null,
-            'features' => $this->getFeaturesForPlan($plan),
-            'limits' => $this->getLimitsForPlan($plan),
+            'features' => $this->getFeaturesForPlan($plan->value),
+            'limits' => $this->getLimitsForPlan($plan->value),
             'metadata' => [
                 'created_from' => fake()->randomElement(['web', 'mobile', 'api']),
                 'campaign' => fake()->optional()->word(),
@@ -50,7 +55,7 @@ class SubscriptionFactory extends Factory
         return match ($plan) {
             'free' => 0.00,
             'pro' => 9.99,
-            'enterprise' => 29.99,
+            'max' => 29.99,
         };
     }
 
@@ -59,7 +64,7 @@ class SubscriptionFactory extends Factory
         return match ($plan) {
             'free' => ['basic_editor', 'limited_storage'],
             'pro' => ['advanced_editor', 'unlimited_versions', 'export_formats', 'sharing'],
-            'enterprise' => ['collaboration', 'api_access', 'priority_support', 'custom_branding'],
+            'max' => ['collaboration', 'api_access', 'priority_support', 'custom_branding'],
         };
     }
 
@@ -68,7 +73,7 @@ class SubscriptionFactory extends Factory
         return match ($plan) {
             'free' => ['documents' => 10, 'storage' => 104857600], // 100MB
             'pro' => ['documents' => 1000, 'storage' => 5368709120], // 5GB
-            'enterprise' => ['documents' => 10000, 'storage' => 53687091200], // 50GB
+            'max' => ['documents' => 10000, 'storage' => 53687091200], // 50GB
         };
     }
 

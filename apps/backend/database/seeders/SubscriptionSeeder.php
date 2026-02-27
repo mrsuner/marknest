@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -14,14 +15,14 @@ class SubscriptionSeeder extends Seeder
     public function run(): void
     {
         // Create subscriptions for non-free users
-        $paidUsers = User::whereIn('plan', ['pro', 'enterprise'])->get();
+        $paidUsers = User::whereIn('plan', [Plan::Pro, Plan::Max])->get();
 
         $paidUsers->each(function ($user) {
             Subscription::factory()->create([
                 'user_id' => $user->id,
-                'plan' => $user->plan,
+                'plan' => $user->plan->value,
                 'status' => 'active',
-                'amount' => $user->plan === 'pro' ? 9.99 : 29.99,
+                'amount' => $user->plan === Plan::Pro ? 9.99 : 29.99,
                 'current_period_start' => now()->subDays(15),
                 'current_period_end' => now()->addDays(15),
             ]);

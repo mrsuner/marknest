@@ -73,7 +73,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('   • Payment transactions and templates');
         $this->command->info('');
         $this->command->info('🔐 Test accounts:');
-        $this->command->info('   • admin@marknest.com (Enterprise plan)');
+        $this->command->info('   • admin@marknest.com (Max plan)');
         $this->command->info('   • test@example.com (Pro plan)');
         $this->command->info('   • demo@example.com (Free plan)');
         $this->command->info('   Password for all: password');

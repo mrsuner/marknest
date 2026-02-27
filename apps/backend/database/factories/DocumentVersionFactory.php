@@ -39,6 +39,7 @@ class DocumentVersionFactory extends Factory
             'operation' => fake()->randomElement(['create', 'update', 'restore']),
             'is_auto_save' => fake()->boolean(30),
             'created_at' => fake()->dateTimeBetween('-1 year', 'now'),
+            'updated_at' => fake()->dateTimeBetween('-1 year', 'now'),
         ];
     }
 

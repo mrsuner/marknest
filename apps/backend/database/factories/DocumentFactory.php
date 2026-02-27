@@ -38,7 +38,6 @@ class DocumentFactory extends Factory
             'version_number' => 1,
             'is_favorite' => fake()->boolean(20),
             'is_archived' => fake()->boolean(10),
-            'tags' => fake()->optional()->randomElements(['work', 'personal', 'ideas', 'notes', 'draft', 'important'], rand(1, 3)),
             'metadata' => [
                 'created_from' => fake()->randomElement(['web', 'mobile', 'api']),
                 'editor_version' => '1.0.0',

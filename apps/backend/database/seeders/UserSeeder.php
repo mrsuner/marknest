@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Plan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -16,11 +17,11 @@ class UserSeeder extends Seeder
         User::factory()->create([
             'name' => 'Admin User',
             'email' => 'admin@marknest.com',
-            'plan' => 'enterprise',
-            'storage_limit' => 53687091200, // 50GB
-            'document_limit' => 10000,
+            'plan' => Plan::Max,
+            'storage_limit' => 10 * 1024 * 1024 * 1024, // 10GB
+            'document_limit' => 1000000,
             'links_limit' => 1000,
-            'version_history_days' => 365,
+            'version_limit' => 100,
             'can_share_public' => true,
             'can_password_protect' => true,
         ]);
@@ -29,11 +30,11 @@ class UserSeeder extends Seeder
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'plan' => 'pro',
-            'storage_limit' => 5368709120, // 5GB
-            'document_limit' => 1000,
+            'plan' => Plan::Pro,
+            'storage_limit' => 1024 * 1024 * 1024, // 1GB
+            'document_limit' => 5000,
             'links_limit' => 100,
-            'version_history_days' => 30,
+            'version_limit' => 100,
             'can_share_public' => true,
             'can_password_protect' => true,
         ]);
@@ -42,7 +43,7 @@ class UserSeeder extends Seeder
         User::factory()->create([
             'name' => 'Demo User',
             'email' => 'demo@example.com',
-            'plan' => 'free',
+            'plan' => Plan::Free,
         ]);
 
         // Create random users with different plans
