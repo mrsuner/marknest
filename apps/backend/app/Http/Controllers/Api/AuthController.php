@@ -11,8 +11,34 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @group Authentication
+ *
+ * APIs for user authentication including OTP-based login and password login.
+ */
 class AuthController extends Controller
 {
+    /**
+     * Request OTP
+     *
+     * Send a one-time password to the user's email for authentication.
+     * If the user doesn't exist, a new account will be created automatically.
+     *
+     * @unauthenticated
+     *
+     * @bodyParam email string required The user's email address. Example: user@example.com
+     *
+     * @response 200 {
+     *   "message": "OTP sent to your email",
+     *   "debug": null
+     * }
+     * @response 422 scenario="Validation Error" {
+     *   "message": "The email field is required.",
+     *   "errors": {
+     *     "email": ["The email field is required."]
+     *   }
+     * }
+     */
     public function requestOtp(Request $request)
     {
         $request->validate([
@@ -49,6 +75,42 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Verify OTP
+     *
+     * Verify the one-time password and authenticate the user.
+     * Returns an access token upon successful verification.
+     *
+     * @unauthenticated
+     *
+     * @bodyParam email string The user's email address. Required unless using magic link flow. Example: user@example.com
+     * @bodyParam otp string required The one-time password received via email. Example: 123456
+     * @bodyParam magic_link boolean Set to true when verifying via magic link (email will be retrieved from OTP cache). Example: false
+     *
+     * @response 200 {
+     *   "user": {
+     *     "id": 1,
+     *     "name": "user",
+     *     "email": "user@example.com",
+     *     "email_verified_at": "2025-01-01T00:00:00.000000Z",
+     *     "created_at": "2025-01-01T00:00:00.000000Z",
+     *     "updated_at": "2025-01-01T00:00:00.000000Z"
+     *   },
+     *   "token": "1|abcdefghijklmnopqrstuvwxyz123456"
+     * }
+     * @response 422 scenario="Invalid OTP" {
+     *   "message": "Invalid or expired OTP",
+     *   "errors": {
+     *     "otp": ["Invalid or expired OTP"]
+     *   }
+     * }
+     * @response 422 scenario="User Not Found" {
+     *   "message": "User not found",
+     *   "errors": {
+     *     "email": ["User not found"]
+     *   }
+     * }
+     */
     public function verifyOtp(Request $request)
     {
         $request->validate([
@@ -102,6 +164,41 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Login with Password
+     *
+     * Authenticate a user with email and password.
+     * Returns an access token upon successful authentication.
+     *
+     * @unauthenticated
+     *
+     * @bodyParam email string required The user's email address. Example: user@example.com
+     * @bodyParam password string required The user's password (minimum 6 characters). Example: password123
+     *
+     * @response 200 {
+     *   "user": {
+     *     "id": 1,
+     *     "name": "user",
+     *     "email": "user@example.com",
+     *     "email_verified_at": "2025-01-01T00:00:00.000000Z",
+     *     "created_at": "2025-01-01T00:00:00.000000Z",
+     *     "updated_at": "2025-01-01T00:00:00.000000Z"
+     *   },
+     *   "token": "1|abcdefghijklmnopqrstuvwxyz123456"
+     * }
+     * @response 422 scenario="Invalid Credentials" {
+     *   "message": "Invalid credentials",
+     *   "errors": {
+     *     "email": ["Invalid credentials"]
+     *   }
+     * }
+     * @response 422 scenario="No Password Set" {
+     *   "message": "Please use email verification to sign in, or set a password first",
+     *   "errors": {
+     *     "email": ["Please use email verification to sign in, or set a password first"]
+     *   }
+     * }
+     */
     public function login(Request $request)
     {
         $request->validate([
@@ -144,6 +241,20 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Logout
+     *
+     * Invalidate the current access token and log the user out.
+     *
+     * @authenticated
+     *
+     * @response 200 {
+     *   "message": "Logged out successfully"
+     * }
+     * @response 401 scenario="Unauthenticated" {
+     *   "message": "Unauthenticated."
+     * }
+     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
