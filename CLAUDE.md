@@ -70,6 +70,7 @@ Key planned features:
 - **Code Style**: Laravel Pint
 - **Authentication**: Laravel Sanctum for API token authentication
 - **DTO**: use spatie/laravel-data for Data Transfer Objects
+- **API Documentation**: knuckleswtf/scribe for auto-generating API docs
 
 API modules planned:
 - Authentication (registration, login, password reset)
@@ -131,3 +132,77 @@ root/
 - PSR-4 autoloading standard
 - Laravel Pint for code formatting
 - Follow Laravel conventions for controllers, models, and migrations
+- **API Documentation**: When creating or editing controller methods, always include Scribe-style PHPDoc annotations for API documentation generation. Use annotation style (`@group`, `@bodyParam`, `@response`, `@authenticated`, etc.)
+
+#### Data Transfer Objects (DTO) and Response Objects (RO)
+
+This project uses `spatie/laravel-data` for both DTOs and ROs with clear separation:
+
+**Namespaces:**
+- `App\Data\` - DTOs for input data (request validation, service parameters)
+- `App\RO\{Module}\` - Response Objects organized by feature module (e.g., `App\RO\User\`, `App\RO\Document\`)
+
+**When to use:**
+- **DTO**: For incoming data - request validation, form data, service method parameters
+- **RO**: For API responses - structured output data returned to clients
+
+**Naming Convention:**
+- PHP properties: camelCase (e.g., `$storageUsed`, `$documentCount`)
+- JSON output: snake_case (e.g., `storage_used`, `document_count`)
+- Use `#[MapName(SnakeCaseMapper::class)]` class attribute for automatic conversion
+
+**Example RO:**
+```php
+<?php
+
+namespace App\RO\User;
+
+use Spatie\LaravelData\Attributes\MapName;
+use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Mappers\SnakeCaseMapper;
+
+#[MapName(SnakeCaseMapper::class)]
+class UserProfileRO extends Data
+{
+    public function __construct(
+        public int $id,
+        public int $storageUsed,  // outputs as "storage_used" in JSON
+    ) {}
+}
+```
+
+#### Controller & Test Organization
+
+**Directory Structure:**
+```
+app/Http/Controllers/Api/
+├── AuthController.php
+├── MeController.php
+├── UserController.php
+└── V1/                          # Versioned API controllers
+    └── ExampleController.php
+
+tests/Feature/Api/
+├── AuthControllerTest.php
+├── MeControllerTest.php
+├── UserControllerTest.php
+└── V1/                          # Mirror the controller structure
+    └── ExampleControllerTest.php
+```
+
+**Naming Convention:**
+- Controller: `{Name}Controller.php` in `App\Http\Controllers\Api\{Module?}`
+- Test: `{Name}ControllerTest.php` in `Tests\Feature\Api\{Module?}`
+- Test class must mirror the controller's namespace structure
+
+**When to Create/Update Tests:**
+- **New Controller**: Create corresponding test class with tests for all public methods
+- **New Method**: Add test methods covering success, authentication (401), validation (422), and error scenarios
+- **Modified Method**: Update existing tests to reflect the changes
+
+**Test Method Naming:**
+- Format: `test_{method}_{scenario}`
+- Examples:
+  - `test_me_returns_authenticated_user_profile`
+  - `test_me_requires_authentication`
+  - `test_update_password_fails_when_current_password_incorrect`

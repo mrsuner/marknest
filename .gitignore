@@ -53,3 +53,7 @@ out/
 
 docker/bootstrap
 docker/storage
+
+# Syncthing
+.stfolder/
+.stignore
