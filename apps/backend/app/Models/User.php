@@ -3,6 +3,9 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Plan;
+use App\Models\ApiKey;
+use App\Models\Tag;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -25,6 +28,8 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'avatar_url',
+        'bio',
         'password',
         'plan',
         'storage_used',
@@ -33,7 +38,7 @@ class User extends Authenticatable
         'document_limit',
         'links_count',
         'links_limit',
-        'version_history_days',
+        'version_limit',
         'can_share_public',
         'can_password_protect',
         'stripe_id',
@@ -62,13 +67,14 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'plan' => Plan::class,
             'storage_used' => 'integer',
             'storage_limit' => 'integer',
             'document_count' => 'integer',
             'document_limit' => 'integer',
             'links_count' => 'integer',
             'links_limit' => 'integer',
-            'version_history_days' => 'integer',
+            'version_limit' => 'integer',
             'can_share_public' => 'boolean',
             'can_password_protect' => 'boolean',
             'trial_ends_at' => 'datetime',
@@ -95,9 +101,9 @@ class User extends Authenticatable
         return $this->hasMany(MediaFile::class);
     }
 
-    public function subscription(): HasOne
+    public function subscriptions(): HasMany
     {
-        return $this->hasOne(Subscription::class);
+        return $this->hasMany(Subscription::class);
     }
 
     public function paymentTransactions(): HasMany
@@ -128,5 +134,15 @@ class User extends Authenticatable
     public function exportJobs(): HasMany
     {
         return $this->hasMany(ExportJob::class);
+    }
+
+    public function apiKeys(): HasMany
+    {
+        return $this->hasMany(ApiKey::class);
+    }
+
+    public function tags(): HasMany
+    {
+        return $this->hasMany(Tag::class);
     }
 }

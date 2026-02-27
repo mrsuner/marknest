@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DocumentMedia extends Pivot
 {
     use HasUlids;
+    use SoftDeletes;
 
     protected $table = 'document_media';
 

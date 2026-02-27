@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->integer('links_count')->default(0)->after('document_limit');
-            $table->integer('links_limit')->default(5)->after('links_count'); // 5 links for free plan
+            $table->integer('links_limit')->default(0)->after('links_count'); // Free has no sharing; higher plans set per plan
         });
     }
 

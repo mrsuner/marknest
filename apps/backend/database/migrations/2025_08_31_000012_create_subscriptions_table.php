@@ -41,7 +41,6 @@ return new class extends Migration
             $table->index('status', 'idx_subscriptions_status');
             $table->index('current_period_end', 'idx_subscriptions_current_period_end');
             $table->index(['user_id', 'status'], 'idx_subscriptions_user_status');
-            $table->unique('user_id', 'unq_subscriptions_user_id');
 
         });
     }

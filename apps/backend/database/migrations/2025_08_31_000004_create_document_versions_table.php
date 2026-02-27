@@ -26,7 +26,8 @@ return new class extends Migration
             $table->json('diff')->nullable(); // Store diff information
             $table->string('operation', 20)->default('update'); // create, update, restore
             $table->boolean('is_auto_save')->default(false);
-            $table->timestamp('created_at')->nullable();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->nullable();
 
             // Indexes
             $table->index('document_id', 'idx_document_versions_document_id');

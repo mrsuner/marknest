@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Tag;
 
 class Document extends Model
 {
@@ -28,7 +29,6 @@ class Document extends Model
         'version_number',
         'is_favorite',
         'is_archived',
-        'tags',
         'metadata',
         'status',
         'last_accessed_at',
@@ -41,7 +41,6 @@ class Document extends Model
         'version_number' => 'integer',
         'is_favorite' => 'boolean',
         'is_archived' => 'boolean',
-        'tags' => 'array',
         'metadata' => 'array',
         'last_accessed_at' => 'datetime',
     ];
@@ -78,6 +77,12 @@ class Document extends Model
             ->withPivot(['usage_context', 'order', 'metadata'])
             ->withTimestamps()
             ->orderBy('document_media.order');
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'document_tag')
+            ->withTimestamps();
     }
 
     public function exportJobs(): HasMany

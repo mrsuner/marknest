@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DocumentShare extends Model
 {
@@ -25,7 +26,6 @@ class DocumentShare extends Model
         'show_watermark',
         'access_level',
         'allowed_emails',
-        'access_log',
         'is_active',
         'description',
     ];
@@ -38,7 +38,6 @@ class DocumentShare extends Model
         'allow_copy' => 'boolean',
         'show_watermark' => 'boolean',
         'allowed_emails' => 'array',
-        'access_log' => 'array',
         'is_active' => 'boolean',
     ];
 
@@ -54,6 +53,11 @@ class DocumentShare extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(DocumentShareEvent::class);
     }
 
     public function scopeActive($query)

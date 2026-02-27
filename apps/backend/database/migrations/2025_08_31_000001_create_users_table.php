@@ -15,14 +15,16 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('avatar_url')->nullable();
+            $table->text('bio')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable();
-            $table->enum('plan', ['free', 'pro', 'max'])->default('free');
+            $table->string('plan', 16)->default('free');
             $table->bigInteger('storage_used')->default(0);
-            $table->bigInteger('storage_limit')->default(104857600); // 100MB for free plan
+            $table->bigInteger('storage_limit')->default(20971520); // 20MB for Free plan
             $table->integer('document_count')->default(0);
-            $table->integer('document_limit')->default(10); // 10 docs for free plan
-            $table->integer('version_history_days')->default(7); // 7 days for free plan
+            $table->integer('document_limit')->default(100); // 100 docs for Free plan
+            $table->integer('version_limit')->default(10); // 10 versions per doc for Free plan
             $table->boolean('can_share_public')->default(false);
             $table->boolean('can_password_protect')->default(false);
             $table->rememberToken();

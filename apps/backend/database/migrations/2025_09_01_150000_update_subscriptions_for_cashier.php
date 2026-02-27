@@ -36,6 +36,7 @@ return new class extends Migration
 
             // Rename our custom columns to avoid conflicts but keep them for custom logic
             if (Schema::hasColumn('subscriptions', 'stripe_subscription_id')) {
+                $table->dropIndex('idx_subscriptions_stripe_subscription_id');
                 $table->dropUnique(['stripe_subscription_id']);
                 $table->dropColumn('stripe_subscription_id');
             }

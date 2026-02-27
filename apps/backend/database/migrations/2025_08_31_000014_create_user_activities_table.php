@@ -21,7 +21,7 @@ return new class extends Migration
             $table->json('metadata')->nullable(); // Additional activity data
             $table->string('ip_address', 45)->nullable();
             $table->string('user_agent')->nullable();
-            $table->timestamp('created_at')->nullable();
+            $table->timestamp('created_at')->useCurrent();
 
             // Indexes
             $table->index('user_id', 'idx_user_activities_user_id');

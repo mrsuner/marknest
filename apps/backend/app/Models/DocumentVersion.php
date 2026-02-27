@@ -11,8 +11,6 @@ class DocumentVersion extends Model
 {
     use HasFactory, HasUlids;
 
-    public $timestamps = false;
-
     protected $fillable = [
         'document_id',
         'user_id',
@@ -27,7 +25,6 @@ class DocumentVersion extends Model
         'diff',
         'operation',
         'is_auto_save',
-        'created_at',
     ];
 
     protected $casts = [
@@ -38,6 +35,7 @@ class DocumentVersion extends Model
         'diff' => 'array',
         'is_auto_save' => 'boolean',
         'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function document(): BelongsTo

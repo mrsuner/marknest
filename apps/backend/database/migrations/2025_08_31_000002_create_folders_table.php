@@ -24,17 +24,19 @@ return new class extends Migration
             $table->string('color', 7)->nullable(); // Hex color for UI
             $table->string('icon', 50)->nullable(); // Icon identifier
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes
             $table->index('user_id', 'idx_folders_user_id');
 
             $table->index('slug', 'idx_folders_slug');
             $table->index('path', 'idx_folders_path');
+            $table->unique(['id', 'user_id'], 'unq_folders_id_user');
 
         });
 
         Schema::table('folders', function (Blueprint $table) {
-            $table->foreign('parent_id')->references('id')->on('folders')->onDelete('cascade');
+            $table->foreign(['parent_id', 'user_id'])->references(['id', 'user_id'])->on('folders')->onDelete('cascade');
             $table->index('parent_id', 'idx_folders_parent_id');
             $table->index(['user_id', 'parent_id'], 'idx_folders_user_parent');
             $table->unique(['user_id', 'parent_id', 'slug'], 'unq_folders_user_parent_slug');

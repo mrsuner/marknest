@@ -31,6 +31,7 @@ return new class extends Migration
             $table->integer('download_count')->default(0);
             $table->timestamp('last_accessed_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes
             $table->index('user_id', 'idx_media_files_user_id');

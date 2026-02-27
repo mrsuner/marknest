@@ -26,7 +26,6 @@ return new class extends Migration
             $table->boolean('show_watermark')->default(false);
             $table->string('access_level', 20)->default('read'); // read, comment, edit
             $table->json('allowed_emails')->nullable(); // Restrict to specific emails
-            $table->json('access_log')->nullable(); // Track who accessed when
             $table->boolean('is_active')->default(true);
             $table->text('description')->nullable();
             $table->timestamps();

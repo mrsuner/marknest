@@ -25,7 +25,6 @@ return new class extends Migration
             $table->integer('version_number')->default(1);
             $table->boolean('is_favorite')->default(false);
             $table->boolean('is_archived')->default(false);
-            $table->json('tags')->nullable(); // Store tags as JSON array
             $table->json('metadata')->nullable(); // Store additional metadata
             $table->string('status', 20)->default('draft'); // draft, published, private
             $table->timestamp('last_accessed_at')->nullable();
