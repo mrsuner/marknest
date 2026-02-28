@@ -1,0 +1,86 @@
+# Features Overview
+
+- User & Auth
+  - Email/password auth with required email verification before document access
+  - OAuth login via Laravel Socialite (Google/GitHub planned)
+  - Magic link / OTP login + password reset (password optional for access)
+  - Personal access tokens for API; token names capture device context (e.g., "Chrome on macOS")
+  - Minimal audit logging (login events); rate limits applied to auth flows per best practice
+  - CAPTCHA via Cloudflare on signup/login/reset; 2FA planned
+  - Profile fields: name, email, optional avatar and bio
+- Account & Plans
+  - Plans: Free, Pro ($1.99/mo or $19.9/yr), Max ($3.99/mo or $39.9/yr)
+  - Limits per PRICING.md: docs (100/5,000/unlimited), asset storage (20MB w/300KB upload, 1GB w/5MB, 10GB w/10MB), versions per doc (10/100/100), sharing/password protection gated to Pro/Max
+  - Email support tiers: email (Free), priority email (Pro/Max)
+  - Enforcement: middleware checks limits/plan (cached in Redis); if past_due >24h → auto-cancel to Free; over-limit grace for 1 month then lock create/edit/share (read-only, links disabled) without deleting data
+  - Subscriptions via Stripe/Cashier; invoices/tax handled by Stripe; upgrades allowed, no downgrades; refunds possible via Stripe prorated by days; no coupons, no trials
+  - Plan metadata stored on user profile for feature flags and limit checks
+- Documents
+  - Markdown-only docs (<=1MB content) with draft/published/private statuses; status not tied to sharing
+  - Tags as per-user unique list (tag table planned), metadata + slug per folder/user
+  - Version increments on every save when content changes; frontend autosave every 60s
+  - Archive = read-only but still counts toward plan limits; favorites for sorting only
+  - Rendered HTML cached asynchronously via queue after save
+  - Hard errors when exceeding plan limits; soft delete with 90-day trash retention
+- Folders
+  - Nested hierarchy per user (design supports deep nesting; recommended depth ≤5)
+  - Unique slug per parent/user; names can repeat; colors/icons optional
+  - Move/rename updates paths atomically; deleting a parent cascades to children
+  - Sorting by name/created_at/updated_at (no manual drag/drop ordering)
+  - Folder sharing allowed based on plan; documents shareable for all plans
+  - No hard folder count cap (recommend ≤100 per user)
+- Version History
+  - Full snapshot versions per document; auto-create on every save when content changes (incl. autosave)
+  - Per-plan caps (10/100/100 versions per doc) with oldest-first pruning when exceeding limits
+  - Owner-only access; viewers via share links cannot see versions
+  - Restore flow: save current state as a new version, then apply selected version as latest
+  - Metadata stored per schema (change summary, diff, operation, auto-save flag); pagination uses configured default page size
+  - Versions are not user-deletable
+- Sharing & Links
+  - Public share links (tokenized) with read-only access; comment/edit planned
+  - Limits align with plan doc/link caps (see PRICING.md); Free blocked from password protection per pricing
+  - User-defined expiry; exceeding max views disables the link; revocation by deleting the share record
+  - Options: password protection (Pro/Max), watermark toggle (all plans), download/copy toggles; allowed emails is planned
+  - Share visibility only via user dashboard; no access logging yet
+- Collaborators
+  - Invite collaborators per document with permissions (view/comment/edit), share/delete flags
+  - Owner managed; collaborators identified by user accounts
+  - Last accessed tracking per collaborator
+- Templates
+  - Personal templates only (public/featured planned)
+  - Categories suggested in UI (e.g., personal/business) but free-form allowed
+  - Template variables supported; usage counts tracked
+- Media & Attachments
+  - Storage on S3/R2 by default; per-file and total storage limits enforced per PRICING.md (frontend + backend validation)
+  - Configurable allowed MIME types; private by default with user-controlled public toggle
+  - Hash-based de-dup per user; media persists when documents are soft-deleted
+  - When a document is shared publicly, linked media can be accessed via signed URLs
+  - Link media to documents with usage context, ordering, and metadata
+- Export Jobs
+  - Exports to PDF and Docx (other formats planned)
+  - Uses queue workers; rendering strategy depends on export library
+  - Per-format options stored in job options; owner-only access to request exports
+  - Download URLs expire after 7 days; email notification sent on success/failure with link or error
+  - Tracks status/progress/file path for retrieval
+- User Preferences
+  - Per-account preferences: theme, editor theme/font/size, autosave interval, preview sync, default view
+  - Sensible defaults (light theme, monospace 14px, autosave on/30s, split view, spell check on); reset-to-default supported
+  - Stored globally per user; cached client-side with updated_at for optimistic updates
+  - Notification toggles for categories (exports, billing, shares) plus global email on/off
+  - Localization-ready with timezone stored; single-language (en) for now
+  - Keyboard shortcuts configurable with validation against allowed actions
+- Activity Log
+  - Records authenticated user actions (auth events, document/folder CRUD, share create/revoke, exports, billing state changes)
+  - Captures entity type/id, IP, and user agent for each entry
+  - User-facing list with filters by date/entity; admin can audit across users
+  - Retention policy recommended (e.g., 180–365 days) with purge job to control size
+- Payments
+  - Stripe-only card payments via Cashier; saved payment methods managed in Stripe
+  - User-initiated refunds supported (processed through Stripe); disputes handled via Stripe webhooks
+  - Invoices/receipts use Stripe-provided documents; tax and fraud/SCA handled by Stripe
+  - Transactions tracked with status, amounts, fees, net, and metadata
+- API Access
+  - Personal API keys required for all public APIs; keys scoped to user data
+  - REST endpoints for accessing user-owned resources (documents, folders, versions, media, shares)
+  - API consumption via standard HTTP calls; rate limits and plan-based permissions apply
+  - Key management (create/revoke) in user settings; tokens labeled per device/app

@@ -1,0 +1,52 @@
+# Marknest Laravel Production FastCGI Configuration with SSL
+
+# Main application with automatic HTTPS via Let's Encrypt
+{$PUBLIC_DOMAIN} {
+    # All requests go to index.php for Laravel routing
+    reverse_proxy app:9000 {
+        transport fastcgi {
+            root /var/www/html/public
+            env SCRIPT_FILENAME /var/www/html/public/index.php
+            env REQUEST_URI {uri}
+            env QUERY_STRING {query}
+            env HTTPS on
+        }
+    }
+
+    # Security headers
+    header {
+        # Enable HSTS
+        Strict-Transport-Security max-age=31536000;
+        # Prevent MIME type sniffing
+        X-Content-Type-Options nosniff
+        # Enable XSS filtering
+        X-XSS-Protection "1; mode=block"
+        # Prevent clickjacking
+        X-Frame-Options DENY
+        # Content Security Policy
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; media-src 'self'; object-src 'none'; child-src 'none'; frame-src 'none'; worker-src 'none'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; manifest-src 'self';"
+        # Hide server information
+        -Server
+    }
+
+    # Enable compression
+    encode {
+        gzip 4
+        minimum_length 1000
+    }
+
+    # Enable access logging
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+        format json
+    }
+}
+
+# Redirect www to non-www (if needed)
+www.{$PUBLIC_DOMAIN} {
+    redir https://{$PUBLIC_DOMAIN}{uri} permanent
+}

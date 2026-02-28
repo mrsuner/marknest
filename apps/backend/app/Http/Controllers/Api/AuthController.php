@@ -3,16 +3,42 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Mail\OtpMail;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @group Authentication
+ *
+ * APIs for user authentication including OTP-based login and password login.
+ */
 class AuthController extends Controller
 {
+    /**
+     * Request OTP
+     *
+     * Send a one-time password to the user's email for authentication.
+     * If the user doesn't exist, a new account will be created automatically.
+     *
+     * @unauthenticated
+     *
+     * @bodyParam email string required The user's email address. Example: user@example.com
+     *
+     * @response 200 {
+     *   "message": "OTP sent to your email",
+     *   "debug": null
+     * }
+     * @response 422 scenario="Validation Error" {
+     *   "message": "The email field is required.",
+     *   "errors": {
+     *     "email": ["The email field is required."]
+     *   }
+     * }
+     */
     public function requestOtp(Request $request)
     {
         $request->validate([
@@ -20,7 +46,7 @@ class AuthController extends Controller
         ]);
 
         $email = $request->email;
-        
+
         // Create or find user
         $user = User::firstOrCreate(
             ['email' => $email],
@@ -32,11 +58,11 @@ class AuthController extends Controller
 
         // Generate OTP
         $otp = $this->generateOtp();
-        
+
         // Store OTP in cache with 10 minutes expiration
         // Also store the email associated with the OTP for magic link verification
         Cache::put($this->getOtpCacheKey($email), $otp, now()->addMinutes(10));
-        Cache::put('otp_email:' . $otp, $email, now()->addMinutes(10));
+        Cache::put('otp_email:'.$otp, $email, now()->addMinutes(10));
 
         // Send OTP via email (skip in local environment)
         if (config('app.env') !== 'local') {
@@ -49,6 +75,42 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Verify OTP
+     *
+     * Verify the one-time password and authenticate the user.
+     * Returns an access token upon successful verification.
+     *
+     * @unauthenticated
+     *
+     * @bodyParam email string The user's email address. Required unless using magic link flow. Example: user@example.com
+     * @bodyParam otp string required The one-time password received via email. Example: 123456
+     * @bodyParam magic_link boolean Set to true when verifying via magic link (email will be retrieved from OTP cache). Example: false
+     *
+     * @response 200 {
+     *   "user": {
+     *     "id": 1,
+     *     "name": "user",
+     *     "email": "user@example.com",
+     *     "email_verified_at": "2025-01-01T00:00:00.000000Z",
+     *     "created_at": "2025-01-01T00:00:00.000000Z",
+     *     "updated_at": "2025-01-01T00:00:00.000000Z"
+     *   },
+     *   "token": "1|abcdefghijklmnopqrstuvwxyz123456"
+     * }
+     * @response 422 scenario="Invalid OTP" {
+     *   "message": "Invalid or expired OTP",
+     *   "errors": {
+     *     "otp": ["Invalid or expired OTP"]
+     *   }
+     * }
+     * @response 422 scenario="User Not Found" {
+     *   "message": "User not found",
+     *   "errors": {
+     *     "email": ["User not found"]
+     *   }
+     * }
+     */
     public function verifyOtp(Request $request)
     {
         $request->validate([
@@ -58,11 +120,11 @@ class AuthController extends Controller
         ]);
 
         $providedOtp = $request->otp;
-        
+
         // If email is not provided, try to get it from the OTP cache (magic link flow)
-        if (!$request->email) {
-            $email = Cache::get('otp_email:' . $providedOtp);
-            if (!$email) {
+        if (! $request->email) {
+            $email = Cache::get('otp_email:'.$providedOtp);
+            if (! $email) {
                 throw ValidationException::withMessages([
                     'otp' => ['Invalid or expired OTP'],
                 ]);
@@ -70,11 +132,11 @@ class AuthController extends Controller
         } else {
             $email = $request->email;
         }
-        
+
         // Get cached OTP
         $cachedOtp = Cache::get($this->getOtpCacheKey($email));
 
-        if (!$cachedOtp || $cachedOtp !== $providedOtp) {
+        if (! $cachedOtp || $cachedOtp !== $providedOtp) {
             throw ValidationException::withMessages([
                 'otp' => ['Invalid or expired OTP'],
             ]);
@@ -82,12 +144,12 @@ class AuthController extends Controller
 
         // Clear the OTP from cache
         Cache::forget($this->getOtpCacheKey($email));
-        Cache::forget('otp_email:' . $providedOtp);
+        Cache::forget('otp_email:'.$providedOtp);
 
         // Find the user
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             throw ValidationException::withMessages([
                 'email' => ['User not found'],
             ]);
@@ -102,6 +164,97 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Login with Password
+     *
+     * Authenticate a user with email and password.
+     * Returns an access token upon successful authentication.
+     *
+     * @unauthenticated
+     *
+     * @bodyParam email string required The user's email address. Example: user@example.com
+     * @bodyParam password string required The user's password (minimum 6 characters). Example: password123
+     *
+     * @response 200 {
+     *   "user": {
+     *     "id": 1,
+     *     "name": "user",
+     *     "email": "user@example.com",
+     *     "email_verified_at": "2025-01-01T00:00:00.000000Z",
+     *     "created_at": "2025-01-01T00:00:00.000000Z",
+     *     "updated_at": "2025-01-01T00:00:00.000000Z"
+     *   },
+     *   "token": "1|abcdefghijklmnopqrstuvwxyz123456"
+     * }
+     * @response 422 scenario="Invalid Credentials" {
+     *   "message": "Invalid credentials",
+     *   "errors": {
+     *     "email": ["Invalid credentials"]
+     *   }
+     * }
+     * @response 422 scenario="No Password Set" {
+     *   "message": "Please use email verification to sign in, or set a password first",
+     *   "errors": {
+     *     "email": ["Please use email verification to sign in, or set a password first"]
+     *   }
+     * }
+     */
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        $email = $request->email;
+        $password = $request->password;
+
+        // Find the user
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid credentials'],
+            ]);
+        }
+
+        // Check if user has a password set
+        if (! $user->password) {
+            throw ValidationException::withMessages([
+                'email' => ['Please use email verification to sign in, or set a password first'],
+            ]);
+        }
+
+        // Verify password
+        if (! Hash::check($password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid credentials'],
+            ]);
+        }
+
+        // Create token
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ]);
+    }
+
+    /**
+     * Logout
+     *
+     * Invalidate the current access token and log the user out.
+     *
+     * @authenticated
+     *
+     * @response 200 {
+     *   "message": "Logged out successfully"
+     * }
+     * @response 401 scenario="Unauthenticated" {
+     *   "message": "Unauthenticated."
+     * }
+     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -124,6 +277,6 @@ class AuthController extends Controller
 
     private function getOtpCacheKey(string $email): string
     {
-        return 'otp:' . $email;
+        return 'otp:'.$email;
     }
 }

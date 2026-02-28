@@ -3,15 +3,22 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Plan;
+use App\Models\ApiKey;
+use App\Models\Tag;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use Billable, HasApiTokens, HasFactory, HasUlids, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -21,7 +28,23 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'avatar_url',
+        'bio',
         'password',
+        'plan',
+        'storage_used',
+        'storage_limit',
+        'document_count',
+        'document_limit',
+        'links_count',
+        'links_limit',
+        'version_limit',
+        'can_share_public',
+        'can_password_protect',
+        'stripe_id',
+        'pm_type',
+        'pm_last_four',
+        'trial_ends_at',
     ];
 
     /**
@@ -44,6 +67,82 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'plan' => Plan::class,
+            'storage_used' => 'integer',
+            'storage_limit' => 'integer',
+            'document_count' => 'integer',
+            'document_limit' => 'integer',
+            'links_count' => 'integer',
+            'links_limit' => 'integer',
+            'version_limit' => 'integer',
+            'can_share_public' => 'boolean',
+            'can_password_protect' => 'boolean',
+            'trial_ends_at' => 'datetime',
         ];
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
+
+    public function folders(): HasMany
+    {
+        return $this->hasMany(Folder::class);
+    }
+
+    public function documentShares(): HasMany
+    {
+        return $this->hasMany(DocumentShare::class);
+    }
+
+    public function mediaFiles(): HasMany
+    {
+        return $this->hasMany(MediaFile::class);
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function paymentTransactions(): HasMany
+    {
+        return $this->hasMany(PaymentTransaction::class);
+    }
+
+    public function preferences(): HasOne
+    {
+        return $this->hasOne(UserPreference::class);
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(UserActivity::class);
+    }
+
+    public function collaborations(): HasMany
+    {
+        return $this->hasMany(DocumentCollaborator::class);
+    }
+
+    public function templates(): HasMany
+    {
+        return $this->hasMany(Template::class);
+    }
+
+    public function exportJobs(): HasMany
+    {
+        return $this->hasMany(ExportJob::class);
+    }
+
+    public function apiKeys(): HasMany
+    {
+        return $this->hasMany(ApiKey::class);
+    }
+
+    public function tags(): HasMany
+    {
+        return $this->hasMany(Tag::class);
     }
 }
