@@ -3,6 +3,8 @@
 .env.local
 .env.production
 .env.staging
+infra/.env.docker
+infra/.env.prod
 
 # OS generated files
 .DS_Store
@@ -51,8 +53,8 @@ build/
 .next/
 out/
 
-docker/bootstrap
-docker/storage
+infra/bootstrap
+infra/storage
 
 # Syncthing
 .stfolder/
