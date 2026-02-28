@@ -1,7 +1,7 @@
 services:
   # Laravel Backend Application (php-fpm)
   app:
-    image: ${DOCKER_IMAGE_NAME:-marknest-app}:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_IMAGE:-ghcr.io/mrsuner/marknest-backend}:${DOCKER_IMAGE_TAG:-latest}
     container_name: marknest-app
     restart: unless-stopped
     working_dir: /var/www/html
@@ -22,7 +22,7 @@ services:
 
   # Queue Worker
   queue:
-    image: ${DOCKER_IMAGE_NAME:-marknest-app}:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_IMAGE:-ghcr.io/mrsuner/marknest-backend}:${DOCKER_IMAGE_TAG:-latest}
     container_name: marknest-queue
     restart: unless-stopped
     working_dir: /var/www/html
@@ -44,7 +44,7 @@ services:
 
   # Task Scheduler
   scheduler:
-    image: ${DOCKER_IMAGE_NAME:-marknest-app}:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_IMAGE:-ghcr.io/mrsuner/marknest-backend}:${DOCKER_IMAGE_TAG:-latest}
     container_name: marknest-scheduler
     restart: unless-stopped
     working_dir: /var/www/html

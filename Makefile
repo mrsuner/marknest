@@ -2,10 +2,9 @@
 .PHONY: help build push up down logs shell
 
 # Configuration
-DOCKER_IMAGE_NAME ?= marknest-app
+DOCKER_IMAGE ?= ghcr.io/mrsuner/marknest-backend
 DOCKER_IMAGE_TAG ?= latest
-DOCKER_REGISTRY ?= docker.io
-DOCKER_USERNAME ?= yourusername
+DOCKER_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Default target
 help:
@@ -17,14 +16,13 @@ help:
 	@echo "  logs   - View logs from all services"
 	@echo "  shell  - Open shell in the app container"
 
-# Build production Docker image
+# Build production Docker image (multi-platform)
 build:
-	docker build -f infra/Dockerfile -t $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) .
+	docker buildx build --platform $(DOCKER_PLATFORMS) -f infra/Dockerfile -t $(DOCKER_IMAGE):$(DOCKER_IMAGE_TAG) .
 
 # Push Docker image to registry
 push:
-	docker tag $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) $(DOCKER_REGISTRY)/$(DOCKER_USERNAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
-	docker push $(DOCKER_REGISTRY)/$(DOCKER_USERNAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+	docker push $(DOCKER_IMAGE):$(DOCKER_IMAGE_TAG)
 
 # Start production services
 up:
