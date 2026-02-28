@@ -74,7 +74,7 @@ export default function FilesBrowseModal({
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
 
-  const getFileIcon = (mimeType: string): JSX.Element => {
+  const getFileIcon = (mimeType: string): React.JSX.Element => {
     if (mimeType.startsWith('image/')) {
       return (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

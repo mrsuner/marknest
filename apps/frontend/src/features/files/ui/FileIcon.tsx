@@ -4,6 +4,7 @@ interface FileIconProps {
   className?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function FileIcon({ mimeType, extension, className = "w-8 h-8" }: FileIconProps) {
   if (mimeType.startsWith('image/')) {
     return (

@@ -32,7 +32,7 @@ export function EditShareModal({ share, isOpen, onClose }: EditShareModalProps) 
       setFormData({
         password: '',
         expires_at: share.expires_at || '',
-        max_views: share.max_views,
+        max_views: share.max_views ?? undefined,
         allow_download: share.allow_download,
         allow_copy: share.allow_copy,
         show_watermark: share.show_watermark,

@@ -30,7 +30,9 @@ export default function StatsCard({
   subtitle,
   icon,
   percentage = 0,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   value,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   maxValue,
   remaining,
   showProgress = false,

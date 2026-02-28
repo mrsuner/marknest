@@ -47,7 +47,7 @@ export default function PreferencesPage() {
     }
   };
 
-  const handleChange = (field: keyof UserPreferences, value: any) => {
+  const handleChange = (field: keyof UserPreferences, value: string | number | boolean) => {
     if (!preferences) return;
     
     setLocalPreferences(prev => ({

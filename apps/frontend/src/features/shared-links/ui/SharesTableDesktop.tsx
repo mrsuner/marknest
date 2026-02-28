@@ -104,7 +104,7 @@ export function SharesTableDesktop({
                     </div>
                     {share.max_views && (
                       <div className="w-20">
-                        <div className={`progress progress-xs ${viewsProgress.isNearLimit ? 'progress-warning' : 'progress-primary'}`} value={viewsProgress.percentage} max="100"></div>
+                        <progress className={`progress progress-xs ${viewsProgress.isNearLimit ? 'progress-warning' : 'progress-primary'}`} value={viewsProgress.percentage} max="100"></progress>
                       </div>
                     )}
                   </div>

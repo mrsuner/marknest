@@ -44,7 +44,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
 
     try {
       setUser(JSON.parse(storedUser));
-    } catch (error) {
+    } catch {
       console.error('Failed to parse user data');
       router.push('/login');
     }

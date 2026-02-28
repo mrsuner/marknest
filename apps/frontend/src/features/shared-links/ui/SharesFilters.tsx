@@ -6,6 +6,7 @@ interface SharesFiltersProps {
   onNewShare: () => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function SharesFilters({ onNewShare }: SharesFiltersProps) {
   const { filters, setSearchQuery, setStatusFilter, setAccessFilter } = useShareFilters();
 

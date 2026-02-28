@@ -16,7 +16,7 @@ export interface DocumentShare {
   show_watermark: boolean
   description?: string | null
   allowed_emails?: string[] | null
-  access_log?: any[]
+  access_log?: Record<string, unknown>[]
   is_active: boolean
   created_at: string
   updated_at: string
@@ -69,7 +69,7 @@ export interface DocumentShareAnalytics {
   remaining_views?: number | null
   is_expired: boolean
   days_until_expiry?: number | null
-  access_log: any[]
+  access_log: Record<string, unknown>[]
   created_at: string
   last_accessed_at?: string | null
 }

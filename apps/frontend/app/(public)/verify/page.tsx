@@ -61,8 +61,8 @@ export default function VerifyPage() {
 
       // Redirect to dashboard
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Verification failed');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verification failed');
       setIsAutoVerifying(false);
     } finally {
       setIsLoading(false);
@@ -74,6 +74,7 @@ export default function VerifyPage() {
     if (isAutoVerifying && otp) {
       handleVerify();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAutoVerifying, otp]);
 
   return (

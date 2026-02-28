@@ -1,4 +1,4 @@
-import { api, Document } from './api'
+import { api } from './api'
 
 export interface Folder {
   id: string

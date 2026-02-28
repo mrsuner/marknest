@@ -45,8 +45,8 @@ export default function LoginPage() {
       localStorage.setItem('pending_email', email);
 
       setShowOtpInput(true);
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +56,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       const response = await fetch(`${env.API_BASE_URL}/api/auth/verify-otp`, {
         method: 'POST',
@@ -78,8 +78,8 @@ export default function LoginPage() {
 
       // Redirect to dashboard
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Invalid or expired OTP');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid or expired OTP');
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +89,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       const response = await fetch(`${env.API_BASE_URL}/api/auth/login`, {
         method: 'POST',
@@ -111,8 +111,8 @@ export default function LoginPage() {
 
       // Redirect to dashboard
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Invalid email or password');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid email or password');
     } finally {
       setIsLoading(false);
     }
@@ -272,7 +272,7 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="w-full text-primary hover:text-primary/80 font-medium transition-colors duration-200"
                 >
-                  Didn't receive code? Send again
+                  Didn&apos;t receive code? Send again
                 </button>
               </form>
             ) : loginMethod === 'password' ? (

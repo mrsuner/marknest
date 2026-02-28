@@ -128,7 +128,7 @@ export default function ProfilePage() {
     if (!token) return;
 
     try {
-      const requestBody: any = {
+      const requestBody: Record<string, string> = {
         new_password: passwordForm.newPassword,
       };
 
@@ -414,7 +414,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               <p className="text-sm text-base-content/60 mb-4">
-                You're currently on the {user?.plan || 'Free'} plan.
+                You&apos;re currently on the {user?.plan || 'Free'} plan.
               </p>
               <Link href="/settings" className="btn btn-outline btn-sm w-full">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

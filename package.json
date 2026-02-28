@@ -1,0 +1,13 @@
+{
+  "name": "marknest",
+  "private": true,
+  "packageManager": "pnpm@10.6.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "cd apps/backend && php artisan serve",
+    "build:frontend": "pnpm --filter frontend build"
+  }
+}

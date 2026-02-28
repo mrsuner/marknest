@@ -19,7 +19,7 @@ function useDebounce<T extends (...args: never[]) => void>(
   callback: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  const timeoutRef = useRef<NodeJS.Timeout | undefined>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const callbackRef = useRef(callback);
 
   // Update callback ref when it changes
@@ -62,7 +62,7 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showVersionComparison, setShowVersionComparison] = useState(false);
   const [selectedVersionForComparison, setSelectedVersionForComparison] = useState<DocumentVersion | null>(null);
-  const [previewVersion, setPreviewVersion] = useState<DocumentVersion | null>(null);
+  const [, setPreviewVersion] = useState<DocumentVersion | null>(null);
   
   // Share modal states
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -203,6 +203,7 @@ export default function DocumentEditor({ documentId }: DocumentEditorProps) {
     // setShowVersionHistory(false);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCompareVersions = (version1: DocumentVersion, version2: DocumentVersion) => {
     setSelectedVersionForComparison(version1);
     setShowVersionComparison(true);

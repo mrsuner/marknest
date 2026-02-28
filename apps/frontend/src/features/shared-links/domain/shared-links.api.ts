@@ -16,7 +16,6 @@ export {
 } from '@/lib/store/api/documentSharesApi';
 
 export type {
-  DocumentShare,
   CreateDocumentShareRequest,
   UpdateDocumentShareRequest,
   DocumentSharesListParams,

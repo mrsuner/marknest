@@ -89,7 +89,7 @@ const CrepeEditorCore = forwardRef<CrepeEditorHandle, UncontrolledCrepeEditorPro
           // Try to focus the editor element
           const editor = editorRef.current.editor;
           if (editor) {
-            editor.action((ctx) => {
+            editor.action((ctx: { get: (key: string) => { call: (cmd: string) => void } }) => {
               ctx.get('commandsCtx').call('focus');
             });
           }

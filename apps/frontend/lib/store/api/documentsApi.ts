@@ -46,7 +46,7 @@ export interface DocumentVersion {
   change_summary: string
   operation: 'create' | 'update' | 'restore'
   is_auto_save: boolean
-  diff?: any
+  diff?: Record<string, unknown>
   created_at: string
   user: {
     id: string
@@ -239,7 +239,7 @@ export const documentsApi = api.injectEndpoints({
     }),
     
     getTrashed: builder.query<{ 
-      data: any[]; // Trashed documents have additional fields like deleted_at and days_until_permanent_deletion
+      data: (Document & { deleted_at: string; days_until_permanent_deletion: number })[];
       meta: {
         current_page: number;
         last_page: number;

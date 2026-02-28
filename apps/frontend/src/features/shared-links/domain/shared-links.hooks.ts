@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useGetDocumentSharesQuery, useBulkUpdateDocumentSharesMutation, useDeleteDocumentShareMutation, useUpdateDocumentShareMutation } from './shared-links.api';
-import type { DocumentSharesListParams, UpdateDocumentShareRequest, DocumentShare } from './shared-links.api';
+import type { DocumentSharesListParams, UpdateDocumentShareRequest } from './shared-links.api';
+import type { DocumentShare } from './shared-links.types';
 
 export interface ShareFilters {
   searchQuery: string;
@@ -66,8 +67,8 @@ export const useSharesWithFilters = (currentPage: number = 1) => {
     page: currentPage,
     per_page: 15,
     ...(filters.searchQuery && { search: filters.searchQuery }),
-    ...(filters.statusFilter && { status: filters.statusFilter as any }),
-    ...(filters.accessFilter && { access_level: filters.accessFilter as any }),
+    ...(filters.statusFilter && { status: filters.statusFilter as DocumentSharesListParams['status'] }),
+    ...(filters.accessFilter && { access_level: filters.accessFilter as DocumentSharesListParams['access_level'] }),
   };
 
   return useGetDocumentSharesQuery(queryParams);

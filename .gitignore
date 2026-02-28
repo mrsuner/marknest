@@ -38,6 +38,9 @@ pids
 # Dependency directories
 node_modules/
 
+# Lock files (use pnpm only)
+package-lock.json
+
 # Optional npm cache directory
 .npm
 

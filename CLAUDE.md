@@ -28,13 +28,20 @@ cp apps/frontend/.env.local.example apps/frontend/.env.local
 
 ## Development Commands
 
+### Root-level workspace scripts (pnpm)
+```bash
+pnpm dev:frontend    # Start frontend dev server (Next.js with Turbopack)
+pnpm dev:backend     # Start backend dev server (Laravel)
+pnpm build:frontend  # Build frontend for production
+```
+
 ### Frontend (Next.js)
 ```bash
 cd apps/frontend
-npm run dev      # Start development server with Turbopack
-npm run build    # Build for production with Turbopack
-npm run lint     # Run ESLint
-npm start        # Start production server
+pnpm dev      # Start development server with Turbopack
+pnpm build    # Build for production with Turbopack
+pnpm lint     # Run ESLint
+pnpm start    # Start production server
 ```
 
 ### Backend (Laravel)

@@ -38,7 +38,7 @@ export default function DocumentRedirectPage() {
         } else {
           setError('Unable to access document.');
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load document.');
       } finally {
         setLoading(false);

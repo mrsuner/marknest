@@ -65,10 +65,11 @@ export default function ShareModal({
       const shareData = await createDocumentShare(payload).unwrap();
       onShareCreated?.(shareData);
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to create share:', error);
       // TODO: Show error toast/notification to user
-      const message = error?.data?.message || error?.message || 'Failed to create share';
+      const rtkError = error as { data?: { message?: string }; message?: string };
+      const message = rtkError?.data?.message || rtkError?.message || 'Failed to create share';
       alert(message);
     }
   };
@@ -148,7 +149,7 @@ export default function ShareModal({
               Share Document
             </h3>
             <p className="text-base-content/60 text-sm mt-1">
-              Create a sharing link for "<span className="font-medium">{documentName}</span>"
+              Create a sharing link for &quot;<span className="font-medium">{documentName}</span>&quot;
             </p>
           </div>
           

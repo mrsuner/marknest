@@ -48,7 +48,7 @@ export interface Document {
   is_favorite: boolean
   is_archived: boolean
   tags?: string[]
-  metadata?: any
+  metadata?: Record<string, unknown>
   status: string
   created_at: string
   updated_at: string
